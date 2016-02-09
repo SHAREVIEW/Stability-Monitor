@@ -10,9 +10,9 @@ using System.Windows.Forms;
 
 namespace Stability_Monitor_win32
 {
-    public partial class Form1 : Form
+    public partial class GUI_form : Form
     {
-        public Form1()
+        public GUI_form()
         {
             InitializeComponent();
         }
