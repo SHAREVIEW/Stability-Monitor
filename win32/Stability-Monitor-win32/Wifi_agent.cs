@@ -15,7 +15,7 @@ namespace Stability_Monitor_win32
         private NetworkStream _netstream;
         private Stream _stream;
         
-        public Wifi_agent(String filepath, Agenttype agenttype, Callback_on_status_changed callback) : base(filepath, agenttype, callback)
+        public Wifi_agent(String filepath, Agenttype agenttype, Callback_on_status_changed callback, Results results) : base(filepath, agenttype, callback, results)
         {
             
         }
@@ -27,7 +27,7 @@ namespace Stability_Monitor_win32
 
         public override void receive_file()
         {
-            this.get_callback().on_file_received(get_filepath(), "subor uspesne prijaty");
+            this.get_callback().on_file_received(get_filepath(), "subor uspesne prijaty", get_results());
         }
     }
 }

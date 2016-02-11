@@ -12,7 +12,7 @@ namespace Stability_Monitor_win32
     class Test
     {
         private Testtype _testtype;
-        private Results _results;
+        private Results _results = new Results();
         private List<Agent> _test_agents = new List<Agent>();
 
 
@@ -22,8 +22,8 @@ namespace Stability_Monitor_win32
             {
                 case Testtype.Test_1:
                     {
-                        add_agent(new Wifi_agent("some filepath for Wifi", new Agenttype(), new Callback_Instance()));
-                        add_agent(new Bluetooth_agent("some filepath for Bluetooth", new Agenttype(), new Callback_Instance()));
+                        add_agent(new Wifi_agent("some filepath for Wifi", new Agenttype(), new Callback_Instance(), _results));
+                        add_agent(new Bluetooth_agent("some filepath for Bluetooth", new Agenttype(), new Callback_Instance(), _results));
 
                         break;
                     }
@@ -49,7 +49,11 @@ namespace Stability_Monitor_win32
 
             for (int i = 0; i < _test_agents.Count(); i++)
             {
-                threads.Add(new Thread(_test_agents.ElementAt(i).receive_file));
+                threads.Add(new Thread(()=>{
+                    Monitor.Enter(_results);
+                    _test_agents.ElementAt(i).receive_file();
+                    Monitor.Exit(_results);
+                }));
             }
 
             foreach(Thread t in threads)

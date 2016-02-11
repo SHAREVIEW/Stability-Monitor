@@ -13,12 +13,14 @@ namespace Stability_Monitor_win32
         private String _filepath;
         private Agenttype _agenttype;
         private Callback_on_status_changed _callback;
+        private Results _results;
 
-        protected Agent(String filepath, Agenttype agenttype ,Callback_on_status_changed callback)
+        protected Agent(String filepath, Agenttype agenttype ,Callback_on_status_changed callback, Results results)
         {
             set_filepath(filepath);
             set_agenttype(agenttype);
             set_callback(callback);
+            set_results(results);
         }
 
         public abstract void send_file();
@@ -52,6 +54,16 @@ namespace Stability_Monitor_win32
         public void set_callback(Callback_on_status_changed cb)
         {
             _callback = cb;
+        }
+
+        public Results get_results()
+        {
+            return _results;
+        }
+
+        public void set_results(Results rs)
+        {
+            _results = rs;
         }
     }
 }
