@@ -11,7 +11,9 @@
 *.userprefs
 
 # Build results
-[Dd]ebug/
+[Dd]ebug/*.config
+[Dd]ebug/*.manifest
+[Dd]ebug/Stability-Monitor-win32.vshost
 [Dd]ebugPublic/
 [Rr]elease/
 [Rr]eleases/
@@ -19,7 +21,6 @@ x64/
 x86/
 build/
 bld/
-[Bb]in/
 [Oo]bj/
 
 # Visual Studio 2015 cache/options directory
@@ -210,3 +211,7 @@ FakesAssemblies/
 GeneratedArtifacts/
 _Pvt_Extensions/
 ModelManifest.xml
+/win32/Stability-Monitor-win32/bin/Debug/Stability-Monitor-win32.exe.config
+/win32/Stability-Monitor-win32/bin/Debug/Stability-Monitor-win32.vshost.exe
+/win32/Stability-Monitor-win32/bin/Debug/Stability-Monitor-win32.vshost.exe.config
+/win32/Stability-Monitor-win32/bin/Debug/Stability-Monitor-win32.vshost.exe.manifest
