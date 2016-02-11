@@ -16,5 +16,13 @@ namespace Stability_Monitor_win32
         {
             InitializeComponent();
         }
+
+        private Almighty_controller ac = new Almighty_controller();
+
+        private void Test_1_runner_Click(object sender, EventArgs e)
+        {
+            ac.shedule_test();
+
+        }
     }
 }

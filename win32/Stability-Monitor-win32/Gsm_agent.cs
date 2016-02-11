@@ -8,5 +8,19 @@ namespace Stability_Monitor_win32
 {
     class Gsm_agent : Agent
     {
+        public Gsm_agent(String filepath, Agenttype agenttype, Callback_on_status_changed callback) : base(filepath, agenttype, callback)
+        {
+
+        }
+
+        public override void send_file()
+        {
+
+        }
+
+        public override void receive_file()
+        {
+
+        }
     }
 }

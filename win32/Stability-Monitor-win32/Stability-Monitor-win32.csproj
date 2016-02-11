@@ -64,6 +64,9 @@
     <Compile Include="Rfid_agent.cs" />
     <Compile Include="Test.cs" />
     <Compile Include="Wifi_agent.cs" />
+    <EmbeddedResource Include="GUI_form.resx">
+      <DependentUpon>GUI_form.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
