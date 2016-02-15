@@ -9,7 +9,7 @@ namespace Stability_Monitor_win32
     class Results
     {
 
-        public void append_to_log(String messgae)
+        public void append_to_log(String message)
         {
 
         }
