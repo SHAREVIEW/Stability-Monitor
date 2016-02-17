@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -22,9 +23,9 @@ namespace Stability_Monitor_win32
             set_callback(callback);
             set_results(results);
         }
-
-        public abstract void send_file();
-        public abstract void receive_file();
+                
+        public abstract void send_file(IPAddress ipaddress, int port);
+        public abstract void receive_file(int port);
 
         public String get_filepath()
         {

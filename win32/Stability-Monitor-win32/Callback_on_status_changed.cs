@@ -11,6 +11,7 @@ namespace Stability_Monitor_win32
 
         void on_file_received(String filename, String report, Results results);
         void on_file_transfer_error(String report, Results results);
+        void on_signal_intensity_or_rssi_change(String report, Results results);
         
     }
 
@@ -24,6 +25,11 @@ namespace Stability_Monitor_win32
         public void on_file_transfer_error(String report, Results results)
         {
 
+        }
+
+        public void on_signal_intensity_or_rssi_change(String report, Results results)
+        {
+            results.append_to_log(report);
         }
     } 
 }

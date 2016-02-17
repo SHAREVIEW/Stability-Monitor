@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -23,7 +24,12 @@ namespace Stability_Monitor_win32
                 case Testtype.Test_1:
                     {
                         add_agent(new Wifi_agent("some filepath for Wifi", new Agenttype(), new Callback_Instance(), _results));
-                        add_agent(new Bluetooth_agent("some filepath for Bluetooth", new Agenttype(), new Callback_Instance(), _results));
+
+                        Thread t1 = new Thread(() =>
+                        {
+                            _test_agents.ElementAt(0).send_file(IPAddress.Parse("10.10.10.1"), 5000);
+
+                        });
 
                         break;
                     }
@@ -45,22 +51,7 @@ namespace Stability_Monitor_win32
 
         public void start_test()
         {
-            List<Thread> threads = new List<Thread>();
-
-            for (int i = 0; i < _test_agents.Count(); i++)
-            {
-                threads.Add(new Thread(()=>{
-                    Monitor.Enter(_results);
-                    _test_agents.ElementAt(i).receive_file();
-                    Monitor.Exit(_results);
-                }));
-            }
-
-            foreach(Thread t in threads)
-            {
-                t.Start();
-            }
-
+            
         }
 
         public Testtype get_testtype()

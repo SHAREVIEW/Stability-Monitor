@@ -6,12 +6,16 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
+using NativeWifi;
+using System.Timers;
+using System.Diagnostics;
+using System.Threading;
 
 namespace Stability_Monitor_win32
 {
     class Wifi_agent : Agent
     {
-        private TcpListener _tcplistener = new TcpListener(IPAddress.Any, 5000);
+        private TcpListener _tcplistener;
         private TcpClient _tcpclient = new TcpClient();
         private UdpClient _udpclient = new UdpClient();
         private NetworkStream _netstream;
@@ -19,25 +23,36 @@ namespace Stability_Monitor_win32
         private Byte[] _buffer;
         private byte[] _tosend;
         private int _length;
-        
+
+        private WlanClient _wlanclient = new WlanClient();
+        private uint _signalquality = 0;
+        private int _rssi = 0;
+        private System.Timers.Timer _timer_sq;          
+
         public Wifi_agent(String filepath, Agenttype agenttype, Callback_on_status_changed callback, Results results) : base(filepath, agenttype, callback, results)
         {
             
         }
 
-        public override void send_file()
+        public override void send_file(IPAddress ipadd, int port)
         {
+            scan_signal_quality_and_rssi();            
             
+            send_file_tcp(ipadd, port);
+
         }
 
-        public override void receive_file()
-        {  
+        public override void receive_file(int port)
+        {
+
+            receive_file_tcp(port);
+            
             //this.get_callback().on_file_received(get_filepath(), "subor uspesne prijaty", get_results());
         }
 
-        private void send_file_TCP()
+        private void send_file_tcp(IPAddress ipadd, int port)
         {            
-            _tcpclient.Connect(IPAddress.Parse("10.10.10.1"), 5000);
+            _tcpclient.Connect(ipadd, port);
             _netstream = _tcpclient.GetStream();
 
             _tosend = File.ReadAllBytes(get_filepath());
@@ -52,10 +67,11 @@ namespace Stability_Monitor_win32
             
         }
 
-        private void receive_file_TCP()
+        private void receive_file_tcp(int port)
         {
             _buffer = new byte[1500];
 
+            _tcplistener = new TcpListener(IPAddress.Any, port);
             _tcplistener.Start();
             _tcpclient = _tcplistener.AcceptTcpClient();
             _netstream = _tcpclient.GetStream();
@@ -76,9 +92,9 @@ namespace Stability_Monitor_win32
             _tcplistener.Stop();
         }
 
-        private void send_file_UDP()
+        private void send_file_udp(IPAddress ipadd, int port)
         {
-            IPEndPoint ipep = new IPEndPoint(IPAddress.Parse("10.10.10.1"), 10000);
+            IPEndPoint ipep = new IPEndPoint(ipadd, 10000);
 
             _tosend = File.ReadAllBytes(get_filepath());
 
@@ -105,10 +121,10 @@ namespace Stability_Monitor_win32
 
         }
 
-        private void receive_file_UDP()
+        private void receive_file_udp(int port)
         {
-            UdpClient udpclient = new UdpClient(10000);
-            IPEndPoint ipep = new IPEndPoint(IPAddress.Any, 10000);
+            UdpClient udpclient = new UdpClient(port);
+            IPEndPoint ipep = new IPEndPoint(IPAddress.Any, port);
 
             _stream = new FileStream(get_filepath(), FileMode.Create, FileAccess.ReadWrite);
 
@@ -123,6 +139,45 @@ namespace Stability_Monitor_win32
             udpclient.Close();
         }
 
+        private void check_signal_quality_and_rssi(object sender, EventArgs e)
+        {
+            foreach (WlanClient.WlanInterface wlanIface in _wlanclient.Interfaces)
+            {
+                if (wlanIface.InterfaceState.ToString() == "Connected")
+                {
+                    if (wlanIface.CurrentConnection.wlanAssociationAttributes.wlanSignalQuality != _signalquality)
+                    {
+                        _signalquality = wlanIface.CurrentConnection.wlanAssociationAttributes.wlanSignalQuality;
+                        get_callback().on_signal_intensity_or_rssi_change("Actual signal quality of Wifi:\t" + _signalquality + " %", get_results());
+                    }
 
+                    Wlan.WlanBssEntry[] wlanbssentries = wlanIface.GetNetworkBssList();
+
+                    foreach (Wlan.WlanBssEntry network in wlanbssentries)
+                    {
+                        if (wlanIface.CurrentConnection.wlanAssociationAttributes.dot11Ssid.SSID == network.dot11Ssid.SSID)
+                        {
+                            if (network.rssi != _rssi) 
+                            {
+                                _rssi = network.rssi;
+                                get_callback().on_signal_intensity_or_rssi_change("Actual RSSI of Wifi:\t" + _rssi + " %", get_results());
+                                break;
+                            }
+                        }
+                    }
+                    break;                  
+                }
+            }            
+        }
+
+        private void scan_signal_quality_and_rssi()
+        {
+            Stopwatch stopwatch_sq = new Stopwatch();
+            stopwatch_sq.Start();
+
+            _timer_sq.Elapsed += new ElapsedEventHandler(check_signal_quality_and_rssi);
+            _timer_sq.Interval = 100;
+            _timer_sq.Start();
+        } 
     }
 }
