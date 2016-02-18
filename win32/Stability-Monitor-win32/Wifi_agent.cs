@@ -10,6 +10,8 @@ using NativeWifi;
 using System.Timers;
 using System.Diagnostics;
 using System.Threading;
+using SharpPcap;
+using SharpPcap.WinPcap;
 
 namespace Stability_Monitor_win32
 {
@@ -27,7 +29,11 @@ namespace Stability_Monitor_win32
         private WlanClient _wlanclient = new WlanClient();
         private uint _signalquality = 0;
         private int _rssi = 0;
-        private System.Timers.Timer _timer_sq;          
+        private System.Timers.Timer _timer_sq;
+
+        private long _transferspeed = 0;
+        private ulong oldseconds = 0;
+        private ulong oldmicroseconds = 0;          
 
         public Wifi_agent(String filepath, Agenttype agenttype, Callback_on_status_changed callback, Results results) : base(filepath, agenttype, callback, results)
         {
@@ -160,7 +166,7 @@ namespace Stability_Monitor_win32
                             if (network.rssi != _rssi) 
                             {
                                 _rssi = network.rssi;
-                                get_callback().on_signal_intensity_or_rssi_change("Actual RSSI of Wifi:\t" + _rssi + " %", get_results());
+                                get_callback().on_signal_intensity_or_rssi_change("Actual RSSI of Wifi:\t" + _rssi + " dBm", get_results());
                                 break;
                             }
                         }
@@ -179,5 +185,42 @@ namespace Stability_Monitor_win32
             _timer_sq.Interval = 100;
             _timer_sq.Start();
         } 
+
+        private void scan_transfer_speed()
+        {
+            CaptureDeviceList devices = CaptureDeviceList.Instance;
+            WinPcapDevice device = null;
+            
+            foreach (WinPcapDevice d in devices)
+            {
+                if (d.ToString().Contains("WiFi"))
+                {
+                    device = d;
+                    break;
+                }
+            }
+
+            device.OnPcapStatistics += new StatisticsModeEventHandler(update_statistics);
+            device.Open(DeviceMode.Promiscuous, 1000);
+            device.Filter = "tcp or udp";
+            device.Mode = CaptureMode.Statistics;
+            device.StartCapture();
+        }
+
+        private void update_statistics(object sender, StatisticsModeEventArgs e)
+        {
+            StatisticsModePacket statistics = e.Statistics;
+
+            long delay = (long)((statistics.Timeval.Seconds - oldseconds) * 1000000 
+                + (statistics.Timeval.MicroSeconds - oldmicroseconds));
+            _transferspeed = (statistics.RecievedBytes * 8 * 1000000) / delay;
+
+            String time = (statistics.Timeval.Seconds + statistics.Timeval.MicroSeconds).ToString();
+
+            get_callback().on_transfer_speed_change(time, _transferspeed.ToString(), get_results());
+
+            oldseconds = statistics.Timeval.Seconds;
+            oldmicroseconds = statistics.Timeval.MicroSeconds;
+        }
     }
 }
