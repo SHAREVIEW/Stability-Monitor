@@ -21,7 +21,7 @@ namespace Stability_Monitor_win32
         private TcpClient _tcpclient = new TcpClient();
         private UdpClient _udpclient = new UdpClient();
         private NetworkStream _netstream;
-        private Stream _stream;
+        private Stream _filestream;
         private Byte[] _buffer;
         private byte[] _tosend;
         private int _length;
@@ -29,31 +29,30 @@ namespace Stability_Monitor_win32
         private WlanClient _wlanclient = new WlanClient();
         private uint _signalquality = 0;
         private int _rssi = 0;
-        private System.Timers.Timer _timer_sq;
-
+        private System.Timers.Timer _timer_sq_rssi = new System.Timers.Timer();
+        private Stopwatch _stopwatch;
+        
         private long _transferspeed = 0;
         private ulong oldseconds = 0;
         private ulong oldmicroseconds = 0;          
 
-        public Wifi_agent(String filepath, Agenttype agenttype, Callback_on_status_changed callback, Results results) : base(filepath, agenttype, callback, results)
-        {
-            
-        }
+        public Wifi_agent(String filepath, Agenttype agenttype, Callback_on_status_changed callback, Results results) : base(filepath, agenttype, callback, results) { }
 
-        public override void send_file(IPAddress ipadd, int port)
+        public override void send_file(String ipadd, int port)
         {
-            scan_signal_quality_and_rssi();            
-            
-            send_file_tcp(ipadd, port);
+            scan_signal_quality_and_rssi();
+            _stopwatch.Start();
+
+            send_file_tcp(IPAddress.Parse(ipadd), port);
 
         }
 
-        public override void receive_file(int port)
+        public override void receive_file(String ipadd, int port)
         {
+            _stopwatch.Start();
 
             receive_file_tcp(port);
-            
-            //this.get_callback().on_file_received(get_filepath(), "subor uspesne prijaty", get_results());
+                        
         }
 
         private void send_file_tcp(IPAddress ipadd, int port)
@@ -81,15 +80,17 @@ namespace Stability_Monitor_win32
             _tcplistener.Start();
             _tcpclient = _tcplistener.AcceptTcpClient();
             _netstream = _tcpclient.GetStream();
-            _stream = new FileStream(get_filepath(), FileMode.Create, FileAccess.ReadWrite);
+            _filestream = new FileStream(get_filepath(), FileMode.Create, FileAccess.ReadWrite);
+
+            scan_transfer_speed();
 
             while ((_length = _netstream.Read(_buffer, 0, _buffer.Length)) != 0)
             {
-                _stream.Write(_buffer, 0, _length);
+                _filestream.Write(_buffer, 0, _length);
             }
 
-            _stream.Dispose();
-            _stream.Close();
+            _filestream.Dispose();
+            _filestream.Close();
 
             _netstream.Dispose();
             _netstream.Close();
@@ -132,15 +133,17 @@ namespace Stability_Monitor_win32
             UdpClient udpclient = new UdpClient(port);
             IPEndPoint ipep = new IPEndPoint(IPAddress.Any, port);
 
-            _stream = new FileStream(get_filepath(), FileMode.Create, FileAccess.ReadWrite);
+            _filestream = new FileStream(get_filepath(), FileMode.Create, FileAccess.ReadWrite);
+
+            scan_transfer_speed();
 
             while ((_length = (_buffer = _udpclient.Receive(ref ipep)).Length) != 0)
             {
-                _stream.Write(_buffer, 0, _length);
+                _filestream.Write(_buffer, 0, _length);
             }
 
-            _stream.Dispose();
-            _stream.Close();
+            _filestream.Dispose();
+            _filestream.Close();
 
             udpclient.Close();
         }
@@ -153,8 +156,11 @@ namespace Stability_Monitor_win32
                 {
                     if (wlanIface.CurrentConnection.wlanAssociationAttributes.wlanSignalQuality != _signalquality)
                     {
+                        String time = _stopwatch.Elapsed.ToString("mm\\:ss\\.ff");
+
                         _signalquality = wlanIface.CurrentConnection.wlanAssociationAttributes.wlanSignalQuality;
-                        get_callback().on_signal_intensity_or_rssi_change("Actual signal quality of Wifi:\t" + _signalquality + " %", get_results());
+
+                        get_callback().on_signal_intensity_or_rssi_change(time + " " + _signalquality + " %", get_results());
                     }
 
                     Wlan.WlanBssEntry[] wlanbssentries = wlanIface.GetNetworkBssList();
@@ -165,8 +171,11 @@ namespace Stability_Monitor_win32
                         {
                             if (network.rssi != _rssi) 
                             {
+                                String time = _stopwatch.Elapsed.ToString("mm\\:ss\\.ff");
+
                                 _rssi = network.rssi;
-                                get_callback().on_signal_intensity_or_rssi_change("Actual RSSI of Wifi:\t" + _rssi + " dBm", get_results());
+
+                                get_callback().on_signal_intensity_or_rssi_change(time + " " + _rssi + " dBm", get_results());
                                 break;
                             }
                         }
@@ -177,13 +186,10 @@ namespace Stability_Monitor_win32
         }
 
         private void scan_signal_quality_and_rssi()
-        {
-            Stopwatch stopwatch_sq = new Stopwatch();
-            stopwatch_sq.Start();
-
-            _timer_sq.Elapsed += new ElapsedEventHandler(check_signal_quality_and_rssi);
-            _timer_sq.Interval = 100;
-            _timer_sq.Start();
+        {   
+            _timer_sq_rssi.Elapsed += new ElapsedEventHandler(check_signal_quality_and_rssi);
+            _timer_sq_rssi.Interval = 100;
+            _timer_sq_rssi.Start();
         } 
 
         private void scan_transfer_speed()
@@ -213,11 +219,11 @@ namespace Stability_Monitor_win32
 
             long delay = (long)((statistics.Timeval.Seconds - oldseconds) * 1000000 
                 + (statistics.Timeval.MicroSeconds - oldmicroseconds));
-            _transferspeed = (statistics.RecievedBytes * 8 * 1000000) / delay;
+            _transferspeed = (statistics.RecievedBytes * 1000000) / delay / 1024;
 
-            String time = (statistics.Timeval.Seconds + statistics.Timeval.MicroSeconds).ToString();
+            String time = _stopwatch.Elapsed.ToString("mm\\:ss\\.ff");
 
-            get_callback().on_transfer_speed_change(time, _transferspeed.ToString(), get_results());
+            get_callback().on_transfer_speed_change(time + " " + _transferspeed.ToString() + " kB/s", get_results());
 
             oldseconds = statistics.Timeval.Seconds;
             oldmicroseconds = statistics.Timeval.MicroSeconds;
