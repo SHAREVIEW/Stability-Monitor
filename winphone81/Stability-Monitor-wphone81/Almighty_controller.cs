@@ -8,5 +8,10 @@ namespace Stability_Monitor_wphone81
 {
     class Almighty_controller
     {
+        public void shedule_test()
+        {
+
+        }
+
     }
 }
