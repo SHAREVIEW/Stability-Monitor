@@ -10,17 +10,14 @@ namespace Stability_Monitor_wphone81
     {
 
 
-        public Gsm_agent(String filepath, Agenttype agenttype, Callback_on_status_changed callback, Results results) : base(filepath, agenttype, callback, results)
+        public Nfc_agent(String filepath, Agenttype agenttype, Callback_on_status_changed callback, Results results) : base(filepath, agenttype, callback, results) { }
+
+        public override void send_file(String add, int not)
         {
 
         }
 
-        public override void send_file()
-        {
-
-        }
-
-        public override void receive_file()
+        public override void receive_file(String add, int not)
         {
 
         }

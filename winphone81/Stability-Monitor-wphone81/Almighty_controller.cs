@@ -10,7 +10,8 @@ namespace Stability_Monitor_wphone81
     {
         public void shedule_test()
         {
-
+            Test test1 = new Test(Testtype.Test_1);
+            test1.start_test();
         }
 
     }

@@ -13,6 +13,7 @@ namespace Stability_Monitor_wphone81
         private Testtype _testtype;
         private Results _results = new Results();
         private List<Agent> _test_agents = new List<Agent>();
+        private List<Task> _tasks = new List<Task>();
 
         public Test(Testtype ttype)
         {
@@ -20,7 +21,13 @@ namespace Stability_Monitor_wphone81
             {
                 case Testtype.Test_1:
                     {
+                        _test_agents.Add(new Wifi_agent("test1.txt", Agenttype.Wifi_agent, new Callback_Instance(), _results));
 
+                        _tasks.Add(new Task(() =>
+                        {
+                            _test_agents.ElementAt(0).send_file("192.168.5.102", 5000);
+                        }
+                        ));
                         break;
                     }
 
@@ -41,7 +48,7 @@ namespace Stability_Monitor_wphone81
 
         public void start_test()
         {
-
+            _tasks.ElementAt(0).Start();
         }
 
         public Testtype get_testtype()

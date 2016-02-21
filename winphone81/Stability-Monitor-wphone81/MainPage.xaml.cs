@@ -44,5 +44,12 @@ namespace Stability_Monitor_wphone81
             // If you are using the NavigationHelper provided by some templates,
             // this event is handled for you.
         }
+
+        private Almighty_controller _almighty_controler = new Almighty_controller();
+
+        private void Test1_btn_Click(object sender, RoutedEventArgs e)
+        {
+            _almighty_controler.shedule_test();
+        }
     }
 }

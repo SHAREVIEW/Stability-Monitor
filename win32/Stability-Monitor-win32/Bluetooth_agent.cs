@@ -22,7 +22,7 @@ namespace Stability_Monitor_win32
         private BluetoothListener _bluetooth_listener;
 
         private System.Timers.Timer _timer_ts = new System.Timers.Timer();
-        private int _receivetbytes = 0;
+        private int _receivebytes = 0;
         private Stopwatch _stopwatch_ts = new Stopwatch();
 
         public Bluetooth_agent(String filepath, Agenttype agenttype, Callback_on_status_changed callback, Results results) : base(filepath, agenttype, callback, results) { }
@@ -72,7 +72,7 @@ namespace Stability_Monitor_win32
 
             while ((length = _netstream.Read(bytes, 0, bytes.Length)) != 0)
             {
-                _receivetbytes += length;
+                _receivebytes += length;
 
                 _filestream.Write(bytes, 0, length);
             }
@@ -91,7 +91,7 @@ namespace Stability_Monitor_win32
         {
             String time = _stopwatch_ts.Elapsed.ToString("mm\\:ss\\.ff");
 
-            int transferspeed = _receivetbytes / 1024;
+            int transferspeed = _receivebytes / 1024;
 
             get_callback().on_transfer_speed_change(time + " " + transferspeed.ToString() + " kB/s", get_results());
 
