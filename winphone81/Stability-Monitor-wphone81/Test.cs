@@ -25,7 +25,7 @@ namespace Stability_Monitor_wphone81
 
                         _tasks.Add(new Task(() =>
                         {
-                            _test_agents.ElementAt(0).send_file("192.168.5.102", 5000);
+                            _test_agents.ElementAt(0).receive_file("192.168.5.102", 5000);
                         }
                         ));
                         break;
