@@ -21,11 +21,11 @@ namespace Stability_Monitor_wphone81
             {
                 case Testtype.Test_1:
                     {
-                        _test_agents.Add(new Wifi_agent("test1.txt", Agenttype.Wifi_agent, new Callback_Instance(), _results));
+                        _test_agents.Add(new Bluetooth_agent("test1.txt", Agenttype.Bluetooth_agent, new Callback_Instance(), _results));
 
                         _tasks.Add(new Task(() =>
                         {
-                            _test_agents.ElementAt(0).receive_file("192.168.5.102", 5000);
+                            _test_agents.ElementAt(0).send_file("34B1CF4D-1069-4AD6-89B6-E161D79BE4D8", 5000);
                         }
                         ));
                         break;

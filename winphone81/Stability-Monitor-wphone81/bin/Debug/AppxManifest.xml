@@ -32,6 +32,12 @@
   <Capabilities>
     <Capability Name="internetClientServer" />
     <Capability Name="picturesLibrary" />
+    <DeviceCapability Name="proximity" />
+    <m2:DeviceCapability Name="bluetooth.rfcomm">
+      <m2:Device Id="any">
+        <m2:Function Type="serviceId:34B1CF4D-1069-4AD6-89B6-E161D79BE4D8" />
+      </m2:Device>
+    </m2:DeviceCapability>
   </Capabilities>
   <build:Metadata>
     <build:Item Name="TargetFrameworkMoniker" Value="WindowsPhoneApp,Version=v8.1" />
