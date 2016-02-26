@@ -18,10 +18,14 @@ namespace Stability_Monitor_wphone81
     class Bluetooth_agent : Agent
     {
         private RfcommDeviceService _rfcomm_service;
+        private RfcommServiceProvider _rfcomm_provider;
         private StreamSocket _bluetooth_client;
+        private StreamSocketListener _bluetooth_listener;
         private DataWriter _datawriter;
         private DataReader _datareader;
         private byte[] _tosend;
+        private uint _length;
+        private byte[] _buffer;
 
         public Bluetooth_agent(String filepath, Agenttype agenttype, Callback_on_status_changed callback, Results results) : base(filepath, agenttype, callback, results) { }
 
@@ -66,9 +70,49 @@ namespace Stability_Monitor_wphone81
                         
         }
 
-        public override void receive_file(String bluid, int not)
+        public override async void receive_file(String bluid, int not)
         {
+            _rfcomm_provider = await RfcommServiceProvider.CreateAsync(
+                RfcommServiceId.FromUuid( new Guid(bluid)));
 
+            _bluetooth_listener = new StreamSocketListener();
+            _bluetooth_listener.ConnectionReceived += _bluetooth_connection_received;
+
+            await _bluetooth_listener.BindServiceNameAsync(_rfcomm_provider.ServiceId.AsString(),
+                SocketProtectionLevel.BluetoothEncryptionAllowNullAuthentication);
+
+            _rfcomm_provider.StartAdvertising(_bluetooth_listener);
+        }
+
+        private async void _bluetooth_connection_received(StreamSocketListener sender, StreamSocketListenerConnectionReceivedEventArgs args)
+        {
+            _datareader = new DataReader(args.Socket.InputStream);
+            _datareader.InputStreamOptions = InputStreamOptions.Partial;
+
+            StorageFolder folder = KnownFolders.PicturesLibrary;
+            StorageFile file = await folder.CreateFileAsync(get_filepath(), CreationCollisionOption.ReplaceExisting);
+
+            IRandomAccessStream _filestream = await file.OpenAsync(FileAccessMode.ReadWrite);
+            IOutputStream _filewriter = _filestream.GetOutputStreamAt(0);
+
+            _datawriter = new DataWriter(_filewriter);
+
+            while (!((_length = await _datareader.LoadAsync(1500)) == 0))
+            {
+                _buffer = new byte[_length];
+                _datareader.ReadBytes(_buffer);
+
+                _datawriter.WriteBytes(_buffer);
+                await _datawriter.StoreAsync();
+            }
+
+            _datawriter.Dispose();
+            _filewriter.Dispose();
+            _filestream.Dispose();
+            _datareader.Dispose();
+
+            sender.Dispose();
+            _bluetooth_listener.Dispose();
         }
     }
 }

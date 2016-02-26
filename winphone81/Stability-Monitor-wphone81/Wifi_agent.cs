@@ -20,7 +20,6 @@ namespace Stability_Monitor_wphone81
         private byte[] _tosend;
         private uint _length;
         private byte[] _buffer;
-        private byte[] _filebuffer;
 
         public Wifi_agent(String filepath, Agenttype agenttype, Callback_on_status_changed callback, Results results) : base(filepath, agenttype, callback, results) { }
 
