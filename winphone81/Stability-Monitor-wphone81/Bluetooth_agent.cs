@@ -32,8 +32,9 @@ namespace Stability_Monitor_wphone81
         public override async void send_file(String bluid, int not)
         {
             var devices = await DeviceInformation.FindAllAsync(
-                RfcommDeviceService.GetDeviceSelector(RfcommServiceId.FromUuid(new Guid(bluid))));            
-            _rfcomm_service = await RfcommDeviceService.FromIdAsync(devices[0].Id);
+                RfcommDeviceService.GetDeviceSelector(RfcommServiceId.FromUuid(new Guid(bluid))));
+
+                    _rfcomm_service = await RfcommDeviceService.FromIdAsync(devices[0].Id);
 
             _bluetooth_client = new StreamSocket();
             await _bluetooth_client.ConnectAsync(_rfcomm_service.ConnectionHostName, _rfcomm_service.ConnectionServiceName);
@@ -97,7 +98,7 @@ namespace Stability_Monitor_wphone81
 
             _datawriter = new DataWriter(_filewriter);
 
-            while (!((_length = await _datareader.LoadAsync(1500)) == 0))
+            while (!((_length = await _datareader.LoadAsync(65000)) == 0))
             {
                 _buffer = new byte[_length];
                 _datareader.ReadBytes(_buffer);

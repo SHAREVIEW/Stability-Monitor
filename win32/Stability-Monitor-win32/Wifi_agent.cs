@@ -30,7 +30,7 @@ namespace Stability_Monitor_win32
         private uint _signalquality = 0;
         private int _rssi = 0;
         private System.Timers.Timer _timer_sq_rssi = new System.Timers.Timer();
-        private Stopwatch _stopwatch;
+        private Stopwatch _stopwatch = new Stopwatch();
         
         private long _transferspeed = 0;
         private ulong oldseconds = 0;
@@ -38,26 +38,26 @@ namespace Stability_Monitor_win32
 
         public Wifi_agent(String filepath, Agenttype agenttype, Callback_on_status_changed callback, Results results) : base(filepath, agenttype, callback, results) { }
 
-        public override void send_file(String ipadd, int port)
+        public override void send_file(String devicename, String ipadd, int port)
         {
             scan_signal_quality_and_rssi();
             _stopwatch.Start();
 
-            send_file_tcp(IPAddress.Parse(ipadd), port);
+            send_file_tcp(ipadd, port);
 
         }
 
-        public override void receive_file(String ipadd, int port)
+        public override void receive_file(String devicename, String ipadd, int port)
         {
             _stopwatch.Start();
 
-            receive_file_tcp(port);
+            receive_file_tcp(devicename, ipadd, port);
                         
         }
 
-        private void send_file_tcp(IPAddress ipadd, int port)
-        {            
-            _tcpclient.Connect(ipadd, port);
+        private void send_file_tcp(String ipadd, int port)
+        {               
+            _tcpclient.Connect(IPAddress.Parse(ipadd), port);
             _netstream = _tcpclient.GetStream();
 
             _tosend = File.ReadAllBytes(get_filepath());
@@ -72,7 +72,7 @@ namespace Stability_Monitor_win32
             
         }
 
-        private void receive_file_tcp(int port)
+        private void receive_file_tcp(String devicename, String ipadd, int port)
         {
             _buffer = new byte[1500];
 
@@ -82,7 +82,7 @@ namespace Stability_Monitor_win32
             _netstream = _tcpclient.GetStream();
             _filestream = new FileStream(get_filepath(), FileMode.Create, FileAccess.ReadWrite);
 
-            scan_transfer_speed();
+            scan_transfer_speed(devicename, ipadd);
 
             while ((_length = _netstream.Read(_buffer, 0, _buffer.Length)) != 0)
             {
@@ -99,9 +99,9 @@ namespace Stability_Monitor_win32
             _tcplistener.Stop();
         }
 
-        private void send_file_udp(IPAddress ipadd, int port)
+        private void send_file_udp(String ipadd, int port)
         {
-            IPEndPoint ipep = new IPEndPoint(ipadd, 10000);
+            IPEndPoint ipep = new IPEndPoint(IPAddress.Parse(ipadd), 10000);
 
             _tosend = File.ReadAllBytes(get_filepath());
 
@@ -128,14 +128,14 @@ namespace Stability_Monitor_win32
 
         }
 
-        private void receive_file_udp(int port)
+        private void receive_file_udp(String devicename, String ipadd, int port)
         {
             UdpClient udpclient = new UdpClient(port);
             IPEndPoint ipep = new IPEndPoint(IPAddress.Any, port);
 
             _filestream = new FileStream(get_filepath(), FileMode.Create, FileAccess.ReadWrite);
 
-            scan_transfer_speed();
+            scan_transfer_speed(devicename, ipadd);
 
             while ((_length = (_buffer = _udpclient.Receive(ref ipep)).Length) != 0)
             {
@@ -192,14 +192,14 @@ namespace Stability_Monitor_win32
             _timer_sq_rssi.Start();
         } 
 
-        private void scan_transfer_speed()
+        private void scan_transfer_speed(String devicename, String ipadd)
         {
             CaptureDeviceList devices = CaptureDeviceList.Instance;
             WinPcapDevice device = null;
             
             foreach (WinPcapDevice d in devices)
             {
-                if (d.ToString().Contains("WiFi"))
+                if (d.ToString().Contains(devicename))
                 {
                     device = d;
                     break;
@@ -208,7 +208,7 @@ namespace Stability_Monitor_win32
 
             device.OnPcapStatistics += new StatisticsModeEventHandler(update_statistics);
             device.Open(DeviceMode.Promiscuous, 1000);
-            device.Filter = "tcp or udp";
+            device.Filter = "(tcp or udp) and host " + ipadd;
             device.Mode = CaptureMode.Statistics;
             device.StartCapture();
         }

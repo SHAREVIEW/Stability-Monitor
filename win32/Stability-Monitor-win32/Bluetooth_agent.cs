@@ -27,13 +27,19 @@ namespace Stability_Monitor_win32
 
         public Bluetooth_agent(String filepath, Agenttype agenttype, Callback_on_status_changed callback, Results results) : base(filepath, agenttype, callback, results) { }
 
-        public override void send_file(String bluid, int not)
+        public override void send_file(String devicename, String bluid, int not)
         {
             _bluetooth_client = new BluetoothClient();
 
             BluetoothDeviceInfo[] devinfos = _bluetooth_client.DiscoverDevices();
 
-            _bluetooth_adress = devinfos[0].DeviceAddress;
+            foreach (var device in devinfos)
+            {
+                if (device.DeviceName == devicename)
+                {
+                    _bluetooth_adress = device.DeviceAddress;
+                }
+            }
 
             _bluetooth_guid = Guid.Parse(bluid);
 
@@ -53,19 +59,31 @@ namespace Stability_Monitor_win32
             _bluetooth_client.Close();
         }
 
-        public override void receive_file(String bluid, int not)
+        public override void receive_file(String devicename, String bluid, int not)
         {            
+            if (devicename.Equals("PC"))
+            {
+                receive_file_pc(bluid);
+            }
+            if (devicename.Equals("Phone"))
+            {
+                receive_file_phone(bluid);
+            }
+        }
+
+        private void receive_file_pc(String bluid)
+        {
             _bluetooth_guid = Guid.Parse(bluid);
             _bluetooth_listener = new BluetoothListener(_bluetooth_guid);
             _bluetooth_listener.Start();
 
             _bluetooth_client = _bluetooth_listener.AcceptBluetoothClient();
             _netstream = _bluetooth_client.GetStream();
-                        
+
             _filestream = new FileStream(get_filepath(), FileMode.Create, FileAccess.ReadWrite);
 
             int length;
-            Byte[] bytes = new Byte[256];
+            Byte[] bytes = new Byte[1024];
 
             scan_transfer_speed();
             _stopwatch_ts.Start();
@@ -76,7 +94,7 @@ namespace Stability_Monitor_win32
 
                 _filestream.Write(bytes, 0, length);
             }
-            
+
             _filestream.Dispose();
             _filestream.Close();
 
@@ -85,6 +103,53 @@ namespace Stability_Monitor_win32
 
             _bluetooth_client.Dispose();
             _bluetooth_client.Close();
+
+            _timer_ts.Close();
+            _stopwatch_ts.Stop();
+        }
+
+        private void receive_file_phone(String bluid)
+        {
+            _bluetooth_guid = Guid.Parse(bluid);
+            _bluetooth_listener = new BluetoothListener(_bluetooth_guid);
+            _bluetooth_listener.Start();
+
+            _bluetooth_client = _bluetooth_listener.AcceptBluetoothClient();
+            _netstream = _bluetooth_client.GetStream();
+
+            _filestream = new FileStream(get_filepath(), FileMode.Create, FileAccess.ReadWrite);
+
+            int length;
+            Byte[] bytes = new Byte[65000];
+
+            scan_transfer_speed();
+            _stopwatch_ts.Start();
+
+            while ((length = _netstream.Read(bytes, 0, bytes.Length)) != 0)
+            {
+                _receivebytes += length;
+
+                if (bytes[length - 3] == 69 && bytes[length - 2] == 78 && bytes[length - 1] == 68)
+                {
+                    length -= 3;
+                    _filestream.Write(bytes, 0, length);
+                    break;
+                }
+
+                _filestream.Write(bytes, 0, length);
+            }
+
+            _filestream.Dispose();
+            _filestream.Close();
+
+            _netstream.Dispose();
+            _netstream.Close();
+
+            _bluetooth_client.Dispose();
+            _bluetooth_client.Close();
+
+            _timer_ts.Close();
+            _stopwatch_ts.Stop();
         }
 
         private void check_transfer_speed(object sender, EventArgs e)

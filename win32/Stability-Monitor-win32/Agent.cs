@@ -24,8 +24,8 @@ namespace Stability_Monitor_win32
             set_results(results);
         }
                 
-        public abstract void send_file(String address, int port);
-        public abstract void receive_file(String address, int port);
+        public abstract void send_file(String devicename, String address, int port);
+        public abstract void receive_file(String devicename, String address, int port);
 
         public String get_filepath()
         {
