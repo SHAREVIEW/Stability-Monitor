@@ -40,19 +40,28 @@ namespace Stability_Monitor_win32
 
         public override void send_file(String devicename, String ipadd, int port)
         {
+            scan_transfer_speed(devicename, ipadd);
             scan_signal_quality_and_rssi();
             _stopwatch.Start();
 
             send_file_tcp(ipadd, port);
 
+            _timer_sq_rssi.Stop();
+            _stopwatch.Stop();
         }
 
         public override void receive_file(String devicename, String ipadd, int port)
         {
+            scan_transfer_speed(devicename, ipadd);
+            scan_signal_quality_and_rssi();
             _stopwatch.Start();
 
             receive_file_tcp(devicename, ipadd, port);
-                        
+
+            System.Threading.Thread.Sleep(1100);
+
+            _timer_sq_rssi.Stop();
+            _stopwatch.Stop();
         }
 
         private void send_file_tcp(String ipadd, int port)
@@ -81,8 +90,6 @@ namespace Stability_Monitor_win32
             _tcpclient = _tcplistener.AcceptTcpClient();
             _netstream = _tcpclient.GetStream();
             _filestream = new FileStream(get_filepath(), FileMode.Create, FileAccess.ReadWrite);
-
-            scan_transfer_speed(devicename, ipadd);
 
             while ((_length = _netstream.Read(_buffer, 0, _buffer.Length)) != 0)
             {
@@ -160,7 +167,7 @@ namespace Stability_Monitor_win32
 
                         _signalquality = wlanIface.CurrentConnection.wlanAssociationAttributes.wlanSignalQuality;
 
-                        get_callback().on_signal_intensity_or_rssi_change(time + " " + _signalquality + " %", get_results());
+                        get_callback().on_signal_intensity_or_rssi_change(get_agenttype() + " " + time + " " + _signalquality + " % \r\n", get_results());
                     }
 
                     Wlan.WlanBssEntry[] wlanbssentries = wlanIface.GetNetworkBssList();
@@ -175,7 +182,7 @@ namespace Stability_Monitor_win32
 
                                 _rssi = network.rssi;
 
-                                get_callback().on_signal_intensity_or_rssi_change(time + " " + _rssi + " dBm", get_results());
+                                get_callback().on_signal_intensity_or_rssi_change(get_agenttype() + " " + time + " " + _rssi + " dBm \r\n", get_results());
                                 break;
                             }
                         }
@@ -199,7 +206,7 @@ namespace Stability_Monitor_win32
             
             foreach (WinPcapDevice d in devices)
             {
-                if (d.ToString().Contains(devicename))
+                if (d.Interface.FriendlyName == devicename)
                 {
                     device = d;
                     break;
@@ -219,11 +226,12 @@ namespace Stability_Monitor_win32
 
             long delay = (long)((statistics.Timeval.Seconds - oldseconds) * 1000000 
                 + (statistics.Timeval.MicroSeconds - oldmicroseconds));
-            _transferspeed = (statistics.RecievedBytes * 1000000) / delay / 1024;
+
+                _transferspeed = (statistics.RecievedBytes * 1000000) / delay / 1024;
 
             String time = _stopwatch.Elapsed.ToString("mm\\:ss\\.ff");
 
-            get_callback().on_transfer_speed_change(time + " " + _transferspeed.ToString() + " kB/s", get_results());
+            get_callback().on_transfer_speed_change(get_agenttype() + " " + time + " " + _transferspeed.ToString() + " kB/s \r\n", get_results());
 
             oldseconds = statistics.Timeval.Seconds;
             oldmicroseconds = statistics.Timeval.MicroSeconds;

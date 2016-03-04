@@ -117,11 +117,9 @@ namespace Stability_Monitor_wphone81
 
                 if (_write)
                 {
-                    String time = _stopwatch.Elapsed.ToString("mm\\:ss\\.ff");
-
                     _transferspeed /= 1024;
-
-                    get_callback().on_transfer_speed_change(time + " " + _transferspeed.ToString() + " kB/s", get_results());
+                    String time = _stopwatch.Elapsed.ToString("mm\\:ss\\.ff");
+                    get_callback().on_transfer_speed_change(get_agenttype() + " " + time + " " + _transferspeed.ToString() + " kB/s", get_results());
 
                     _transferspeed = 0;
                     _write = false;
@@ -137,11 +135,11 @@ namespace Stability_Monitor_wphone81
             _datareader.Dispose();
 
             timer.Cancel();
-
             _stopwatch.Stop();
 
+            _transferspeed /= 1024;
             String lasttime = _stopwatch.Elapsed.ToString("mm\\:ss\\.ff");
-            get_callback().on_transfer_speed_change(lasttime + " " + _transferspeed.ToString() + " kB/s", get_results());
+            get_callback().on_transfer_speed_change(get_agenttype() + " " + lasttime + " " + _transferspeed.ToString() + " kB/s", get_results());
 
             sender.Dispose();
             _bluetooth_listener.Dispose();

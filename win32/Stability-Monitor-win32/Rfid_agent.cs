@@ -13,12 +13,12 @@ namespace Stability_Monitor_win32
 
         }
 
-        public override void send_file()
+        public override void send_file(String devicename, String ipadd, int not)
         {
 
         }
 
-        public override void receive_file()
+        public override void receive_file(String devicename, String ipadd, int not)
         {
             
         }

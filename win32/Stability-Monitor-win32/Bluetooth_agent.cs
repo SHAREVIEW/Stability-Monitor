@@ -158,7 +158,7 @@ namespace Stability_Monitor_win32
 
             int transferspeed = _receivebytes / 1024;
 
-            get_callback().on_transfer_speed_change(time + " " + transferspeed.ToString() + " kB/s", get_results());
+            get_callback().on_transfer_speed_change(get_agenttype() + " " + time + " " + transferspeed.ToString() + " kB/s", get_results());
 
         }
 

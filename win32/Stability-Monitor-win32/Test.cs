@@ -15,7 +15,7 @@ namespace Stability_Monitor_win32
         private Testtype _testtype;
         private Results _results = new Results();
         private List<Agent> _test_agents = new List<Agent>();
-
+        private List<Thread> _threads = new List<Thread>();
 
         public Test(Testtype ttype)
         {
@@ -23,13 +23,13 @@ namespace Stability_Monitor_win32
             {
                 case Testtype.Test_1:
                     {
-                        add_agent(new Wifi_agent("some filepath for Wifi", new Agenttype(), new Callback_Instance(), _results));
+                        add_agent(new Wifi_agent(@"C:\Games\test3.mp3", Agenttype.Wifi_agent, new Callback_Instance(), _results));
 
-                        Thread t1 = new Thread(() =>
+                        _threads.Add(new Thread(() =>
                         {
-                            _test_agents.ElementAt(0).send_file(IPAddress.Parse("10.10.10.1"), 5000);
+                            _test_agents.ElementAt(0).receive_file("WiFi", "192.168.5.100", 5000);
 
-                        });
+                        }));
 
                         break;
                     }
@@ -51,7 +51,10 @@ namespace Stability_Monitor_win32
 
         public void start_test()
         {
-            
+            foreach (Thread t in _threads)
+            {
+                t.Start();
+            }
         }
 
         public Testtype get_testtype()

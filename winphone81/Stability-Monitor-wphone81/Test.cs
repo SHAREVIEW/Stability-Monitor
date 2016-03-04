@@ -21,13 +21,13 @@ namespace Stability_Monitor_wphone81
             {
                 case Testtype.Test_1:
                     {
-                        _test_agents.Add(new Wifi_agent("test3.mp3", Agenttype.Wifi_agent, new Callback_Instance(), _results));
-
+                        _test_agents.Add(new Gsm_agent("test10.txt", Agenttype.Gsm_agent, new Callback_Instance(), _results));
                         _tasks.Add(new Task(() =>
                         {
-                            _test_agents.ElementAt(0).receive_file("", 5000);
+                            _test_agents.ElementAt(0).receive_file("192.168.5.102", 5000);
                         }
                         ));
+
                         break;
                     }
 
@@ -48,7 +48,10 @@ namespace Stability_Monitor_wphone81
 
         public void start_test()
         {
-            _tasks.ElementAt(0).Start();
+            foreach (Task t in _tasks)
+            {
+                t.Start();
+            }
         }
 
         public Testtype get_testtype()

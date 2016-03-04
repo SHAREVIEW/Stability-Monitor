@@ -3,18 +3,31 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Threading;
 using Windows.Storage;
 using System.IO;
 using Windows.Storage.Streams;
 using Windows.Networking.Connectivity;
 using Windows.UI.Xaml;
 using Windows.System.Threading;
-using System.Net.Http;
+using Windows.Web.Http;
+using System.Diagnostics;
 
 namespace Stability_Monitor_wphone81
 {
     class Gsm_agent : Agent
     {
+        private HttpClient _httpclient = new HttpClient();
+        private HttpResponseMessage _httpresponse;
+        private Progress<HttpProgress> _httpprogress;
+        private Uri _httpurl;
+        private IBuffer _buffer;
+        private DataWriter _datawriter;
+
+        private ThreadPoolTimer timer;
+        private ulong _transferspeed = 0;
+        private Boolean _write;
+        private Stopwatch _stopwatch = new Stopwatch();
 
         public Gsm_agent(String filepath, Agenttype agenttype, Callback_on_status_changed callback, Results results) : base(filepath, agenttype, callback, results)
         {
@@ -25,9 +38,68 @@ namespace Stability_Monitor_wphone81
         {
 
         }
-
-        public override void receive_file(String add, int not)
+        
+        public override async void receive_file(String add, int not)
         {
+            scan_network_speed();
+            _stopwatch.Start();
+                        
+            _httpurl = new Uri(add);            
+            _httpprogress = new Progress<HttpProgress>(ProgressHandler);
+            _httpresponse = await _httpclient.GetAsync(_httpurl).AsTask(new CancellationToken(), _httpprogress);
+
+            StorageFolder folder = KnownFolders.PicturesLibrary;
+            StorageFile file = await folder.CreateFileAsync(get_filepath(), CreationCollisionOption.ReplaceExisting);
+            IRandomAccessStream _filestream = await file.OpenAsync(FileAccessMode.ReadWrite);
+            IOutputStream _filewriter = _filestream.GetOutputStreamAt(0);
+            _datawriter = new DataWriter(_filewriter);
+
+            timer.Cancel();
+            _stopwatch.Stop();
+
+            _transferspeed /= 1024;
+            String lasttime = _stopwatch.Elapsed.ToString("mm\\:ss\\.ff");            
+            get_callback().on_transfer_speed_change(get_agenttype() + " " + lasttime + " " + _transferspeed.ToString() + " kB/s", get_results());
+
+            _buffer = await _httpresponse.Content.ReadAsBufferAsync();
+
+            _datawriter.WriteBuffer(_buffer);
+            await _datawriter.StoreAsync();
+
+            _datawriter.Dispose();
+            _filewriter.Dispose();
+            _filestream.Dispose();
+
+            _httpclient.Dispose();            
         }
+
+        private void ProgressHandler(HttpProgress obj)
+        {
+            _transferspeed += obj.BytesReceived;
+
+            if (_write)
+            {
+                String time = _stopwatch.Elapsed.ToString("mm\\:ss\\.ff");
+
+                _transferspeed /= 1024;
+
+                get_callback().on_transfer_speed_change(get_agenttype() + " " + time + " " + _transferspeed.ToString() + " kB/s", get_results());
+
+                _transferspeed = 0;
+                _write = false;
+            }
+        }
+
+        public void scan_network_speed()
+        {
+
+            timer = ThreadPoolTimer.CreatePeriodicTimer(update_network_speed, TimeSpan.FromSeconds(1));
+
+        }
+
+        public void update_network_speed(object sender)
+        {
+            _write = true;
+        }        
     }
 }
