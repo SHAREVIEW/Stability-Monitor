@@ -24,77 +24,91 @@ namespace Stability_Monitor_wphone81
         private IBuffer _buffer;
         private DataWriter _datawriter;
 
-        private ThreadPoolTimer timer;
+        private ThreadPoolTimer _timer;
         private ulong _transferspeed = 0;
         private Boolean _write;
         private Stopwatch _stopwatch = new Stopwatch();
+        private String _message;
 
         public Gsm_agent(String filepath, Agenttype agenttype, Callback_on_status_changed callback, Results results) : base(filepath, agenttype, callback, results)
         {
 
         }
 
-        public override void send_file(String add, int not)
+        public override void send_file(String devicename, String add, int not)
         {
 
         }
         
         public override async void receive_file(String add, int not)
         {
-            scan_network_speed();
-            _stopwatch.Start();
-                        
-            _httpurl = new Uri(add);            
-            _httpprogress = new Progress<HttpProgress>(ProgressHandler);
-            _httpresponse = await _httpclient.GetAsync(_httpurl).AsTask(new CancellationToken(), _httpprogress);
+            try
+            {
+                scan_network_speed();
+                _stopwatch.Start();
 
-            StorageFolder folder = KnownFolders.PicturesLibrary;
-            StorageFile file = await folder.CreateFileAsync(get_filepath(), CreationCollisionOption.ReplaceExisting);
-            IRandomAccessStream _filestream = await file.OpenAsync(FileAccessMode.ReadWrite);
-            IOutputStream _filewriter = _filestream.GetOutputStreamAt(0);
-            _datawriter = new DataWriter(_filewriter);
+                _httpurl = new Uri(add);
+                _httpprogress = new Progress<HttpProgress>(ProgressHandler);
+                _httpresponse = await _httpclient.GetAsync(_httpurl).AsTask(new CancellationToken(), _httpprogress);
 
-            timer.Cancel();
-            _stopwatch.Stop();
+                StorageFolder folder = KnownFolders.PicturesLibrary;
+                StorageFile file = await folder.CreateFileAsync(this._filepath, CreationCollisionOption.ReplaceExisting);
+                IRandomAccessStream filestream = await file.OpenAsync(FileAccessMode.ReadWrite);
+                IOutputStream filewriter = filestream.GetOutputStreamAt(0);
+                _datawriter = new DataWriter(filewriter);
 
-            _transferspeed /= 1024;
-            String lasttime = _stopwatch.Elapsed.ToString("mm\\:ss\\.ff");            
-            get_callback().on_transfer_speed_change(get_agenttype() + " " + lasttime + " " + _transferspeed.ToString() + " kB/s", get_results());
+                _timer.Cancel();
 
-            _buffer = await _httpresponse.Content.ReadAsBufferAsync();
+                _transferspeed /= 1024;
+                _message = format_message(_stopwatch.Elapsed, "Transferspeed", _transferspeed.ToString(), " kB/s");
+                this._callback.on_transfer_speed_change(_message, this._results);
 
-            _datawriter.WriteBuffer(_buffer);
-            await _datawriter.StoreAsync();
+                _stopwatch.Stop();
 
-            _datawriter.Dispose();
-            _filewriter.Dispose();
-            _filestream.Dispose();
+                _buffer = await _httpresponse.Content.ReadAsBufferAsync();
 
-            _httpclient.Dispose();            
+                _datawriter.WriteBuffer(_buffer);
+                await _datawriter.StoreAsync();
+
+                _datawriter.Dispose();
+                filewriter.Dispose();
+                filestream.Dispose();
+
+                _httpclient.Dispose();
+            }
+            catch (Exception e)
+            {
+                
+            }            
         }
 
         private void ProgressHandler(HttpProgress obj)
         {
-            _transferspeed += obj.BytesReceived;
-
-            if (_write)
+            try
             {
-                String time = _stopwatch.Elapsed.ToString("mm\\:ss\\.ff");
+                _transferspeed += obj.BytesReceived;
 
-                _transferspeed /= 1024;
+                if (_write)
+                {
+                    String time = _stopwatch.Elapsed.ToString("mm\\:ss\\.ff");
 
-                get_callback().on_transfer_speed_change(get_agenttype() + " " + time + " " + _transferspeed.ToString() + " kB/s", get_results());
+                    _transferspeed /= 1024;
+                    _message = format_message(_stopwatch.Elapsed, "Transferspeed", _transferspeed.ToString(), " kB/s");
+                    this._callback.on_transfer_speed_change(_message, this._results);
 
-                _transferspeed = 0;
-                _write = false;
+                    _transferspeed = 0;
+                    _write = false;
+                }
+            }
+            catch (Exception e)
+            {
+                
             }
         }
 
         public void scan_network_speed()
         {
-
-            timer = ThreadPoolTimer.CreatePeriodicTimer(update_network_speed, TimeSpan.FromSeconds(1));
-
+            _timer = ThreadPoolTimer.CreatePeriodicTimer(update_network_speed, TimeSpan.FromSeconds(1));
         }
 
         public void update_network_speed(object sender)

@@ -12,10 +12,10 @@ namespace Stability_Monitor_win32
 
     class Test
     {
-        private Testtype _testtype;
-        private Results _results = new Results();
-        private List<Agent> _test_agents = new List<Agent>();
-        private List<Thread> _threads = new List<Thread>();
+        private Testtype _testtype { get; set; }
+        private Results _results { get; set; } = new Results();
+        private List<Agent> _test_agents { get; set; } = new List<Agent>();
+        private List<Thread> _threads { get; set; } = new List<Thread>();
 
         public Test(Testtype ttype)
         {
@@ -23,11 +23,11 @@ namespace Stability_Monitor_win32
             {
                 case Testtype.Test_1:
                     {
-                        add_agent(new Wifi_agent(@"C:\Games\test3.mp3", Agenttype.Wifi_agent, new Callback_Instance(), _results));
+                        _test_agents.Add(new Bluetooth_agent(@"C:\Games\test3.mp3", Agenttype.Bluetooth_agent, new Callback_Instance(), _results));
 
                         _threads.Add(new Thread(() =>
                         {
-                            _test_agents.ElementAt(0).receive_file("WiFi", "192.168.5.100", 5000);
+                            _test_agents.ElementAt(0).receive_file("", "34B1CF4D-1069-4AD6-89B6-E161D79BE4D8", 5000);
 
                         }));
 
@@ -48,48 +48,12 @@ namespace Stability_Monitor_win32
             }
         }
 
-
         public void start_test()
         {
             foreach (Thread t in _threads)
             {
                 t.Start();
             }
-        }
-
-        public Testtype get_testtype()
-        {
-            return _testtype;
-        }
-
-        public void set_testtype(Testtype tt)
-        {
-            _testtype = tt;
-        }
-
-        public Results get_results()
-        {
-            return _results;
-        }
-
-        public void set_results(Results rs)
-        {
-            _results = rs;
-        }
-
-        public List<Agent> get_agents()
-        {
-            return _test_agents;
-        }
-
-        public void set_agents(List<Agent> ta)
-        {
-            _test_agents = ta;
-        }
-
-        public void add_agent(Agent a)
-        {
-            _test_agents.Add(a);
-        }
+        }       
     }       
 }

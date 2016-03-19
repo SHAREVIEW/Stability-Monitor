@@ -15,7 +15,7 @@ namespace Stability_Monitor_wphone81
 
         }
 
-        public override void send_file(String add, int not)
+        public override void send_file(String devicename, String add, int not)
         {
 
         }

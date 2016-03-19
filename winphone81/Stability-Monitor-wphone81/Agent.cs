@@ -10,60 +10,25 @@ namespace Stability_Monitor_wphone81
 
     abstract class Agent
     {
-        private String _filepath;
-        private Agenttype _agenttype;
-        private Callback_on_status_changed _callback;
-        private Results _results;
+        public String _filepath { get; set; }
+        public Agenttype _agenttype { get; set; }
+        public Callback_on_status_changed _callback { get; set; }
+        public Results _results { get; set; }
 
         protected Agent(String filepath, Agenttype agenttype, Callback_on_status_changed callback, Results results)
         {
-            set_filepath(filepath);
-            set_agenttype(agenttype);
-            set_callback(callback);
-            set_results(results);
+            this._filepath = filepath;
+            this._agenttype = agenttype;
+            this._callback = callback;
+            this._results = results;
         }
 
-        public abstract void send_file(String address, int port);
+        public abstract void send_file(String devicename, String address, int port);
         public abstract void receive_file(String address, int port);
 
-        public String get_filepath()
+        public String format_message(TimeSpan time, String parameter, String value, String unit)
         {
-            return _filepath;
-        }
-
-        public void set_filepath(String fp)
-        {
-            _filepath = fp;
-        }
-
-        public Agenttype get_agenttype()
-        {
-            return _agenttype;
-        }
-
-        public void set_agenttype(Agenttype at)
-        {
-            _agenttype = at;
-        }
-
-        public Callback_on_status_changed get_callback()
-        {
-            return _callback;
-        }
-
-        public void set_callback(Callback_on_status_changed cb)
-        {
-            _callback = cb;
-        }
-
-        public Results get_results()
-        {
-            return _results;
-        }
-
-        public void set_results(Results rs)
-        {
-            _results = rs;
+            return this._agenttype.ToString() + "\t" + time.ToString("mm\\:ss\\.ff") + "\t" + parameter + "\t" + "=" + "\t" + value + "\t" + unit + "\r\n";
         }
     }
 }

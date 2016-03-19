@@ -8,6 +8,7 @@ namespace Stability_Monitor_win32
 {
     class Almighty_controller
     {
+        private List<Test> _tests { get; set; }
         
         public void shedule_test()
         {
@@ -15,5 +16,9 @@ namespace Stability_Monitor_win32
             test1.start_test();
         }
         
+        public void shedule_tests(List<Test> tests)
+        {
+
+        }
     }
 }
