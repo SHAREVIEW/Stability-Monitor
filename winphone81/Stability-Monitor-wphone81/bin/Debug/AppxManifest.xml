@@ -44,7 +44,7 @@
     <build:Item Name="VisualStudio" Version="14.0" />
     <build:Item Name="VisualStudioEdition" Value="Microsoft Visual Studio Community 2015" />
     <build:Item Name="OperatingSystem" Version="6.3.9600.16384 (winblue_rtm.130821-1623)" />
-    <build:Item Name="Microsoft.Build.AppxPackage.dll" Version="14.0.23107.0" />
+    <build:Item Name="Microsoft.Build.AppxPackage.dll" Version="14.0.24720.0" />
     <build:Item Name="ProjectGUID" Value="{5CA04518-8ADC-4B0C-A929-BBA619FEBD45}" />
     <build:Item Name="Microsoft.Windows.UI.Xaml.81.Build.Tasks.dll" Version="14.0.22705.1" />
     <build:Item Name="MakePri.exe" Version="6.3.9600.17336 (winblue.150226-1500)" />

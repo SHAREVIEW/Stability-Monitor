@@ -41,7 +41,7 @@ namespace Stability_Monitor_wphone81
         }
 
         private async void send_file_tcp(String ipadd, int port)
-        {
+        {            
             try {
                 _tcpclient = new StreamSocket();
 
@@ -69,7 +69,7 @@ namespace Stability_Monitor_wphone81
             }
             catch (Exception e)
             {
-
+                append_error_tolog(e, _stopwatch.Elapsed, ipadd);
             }            
         }
 
@@ -136,7 +136,7 @@ namespace Stability_Monitor_wphone81
             }
             catch (Exception e)
             {
-
+                append_error_tolog(e, _stopwatch.Elapsed, "");
             }
         }
         

@@ -43,46 +43,32 @@ namespace Stability_Monitor_win32
 
         public override void send_file(String devicename, String ipadd, int port)
         {
-            try
-            {
-                scan_transfer_speed(devicename, ipadd);
-                //scan_signal_quality_and_rssi();
-                _stopwatch.Start();
+            scan_transfer_speed(devicename, ipadd);
+            //scan_signal_quality_and_rssi();
+            _stopwatch.Start();
 
-                send_file_udp(ipadd, port);
+            send_file_tcp(ipadd, port);
 
-                System.Threading.Thread.Sleep(1010);
+            System.Threading.Thread.Sleep(1010);
 
-                _timer_sq_rssi.Stop();
-                device.Close();
-                _stopwatch.Stop();
-            }
-            catch (Exception e)
-            {
-                
-            }
+            _timer_sq_rssi.Stop();
+            if (device.Started) device.Close();
+            _stopwatch.Stop();
         }
 
         public override void receive_file(String devicename, String ipadd, int port)
         {
-            try
-            {
-                scan_transfer_speed(devicename, ipadd);
-                scan_signal_quality_and_rssi();
-                _stopwatch.Start();
+            scan_transfer_speed(devicename, ipadd);
+            scan_signal_quality_and_rssi();
+            _stopwatch.Start();
 
-                receive_file_tcp(devicename, ipadd, port);
+            receive_file_tcp(devicename, ipadd, port);
 
-                System.Threading.Thread.Sleep(1010);
+            System.Threading.Thread.Sleep(1010);
 
-                _timer_sq_rssi.Stop();
-                device.Close();
-                _stopwatch.Stop();
-            }
-            catch (Exception e)
-            {
-                
-            }
+            _timer_sq_rssi.Stop();
+            if (device.Started) device.Close();
+            _stopwatch.Stop();
         }
 
         private void send_file_tcp(String ipadd, int port)
@@ -101,11 +87,14 @@ namespace Stability_Monitor_win32
                 _netstream.Close();
 
                 _tcpclient.Close();
+
+                _message = format_message(_stopwatch.Elapsed, "File Transfer", "OK", this._filepath);
+                this._callback.on_file_received(_message, this._results);
             }
             catch (Exception e)
             {
-                
-            }            
+                append_error_tolog(e, _stopwatch.Elapsed, "");
+            }       
         }
 
         private void receive_file_tcp(String devicename, String ipadd, int port)
@@ -133,10 +122,13 @@ namespace Stability_Monitor_win32
 
                 _tcpclient.Close();
                 _tcplistener.Stop();
+
+                _message = format_message(_stopwatch.Elapsed, "File Transfer", "OK", this._filepath);
+                this._callback.on_file_received(_message, this._results);
             }
             catch (Exception e)
             {
-                
+                append_error_tolog(e, _stopwatch.Elapsed, devicename);
             }
         }
 
@@ -174,10 +166,13 @@ namespace Stability_Monitor_win32
                 _udpclient.Send(_buffer, 0, ipep);
 
                 _udpclient.Close();
+
+                _message = format_message(_stopwatch.Elapsed, "File Transfer", "OK", this._filepath);
+                this._callback.on_file_received(_message, this._results);
             }
             catch (Exception e)
             {
-                
+                append_error_tolog(e, _stopwatch.Elapsed, "");
             }
         }
 
@@ -221,68 +216,61 @@ namespace Stability_Monitor_win32
 
                 byte[] hash_receivedbytes = File.ReadAllBytes(this._filepath);
 
+                udpclient.Close();
+
                 if (!(hash_bytes.Equals(hash_receivedbytes)))
                 {
-                    _message = format_message(_stopwatch.Elapsed, "File Transfer", "NOK", "");
+                    _message = format_message(_stopwatch.Elapsed, "File Transfer", "NOK", "Different hash");
                     this._callback.on_file_received(_message, this._results);
                 }
                 else
                 {
-                    _message = format_message(_stopwatch.Elapsed, "File Transfer", "OK", "");
+                    _message = format_message(_stopwatch.Elapsed, "File Transfer", "OK", this._filepath);
                     this._callback.on_file_received(_message, this._results);
-                }
-
-                udpclient.Close();
+                }    
             }
             catch (Exception e)
             {
-                
+                append_error_tolog(e, _stopwatch.Elapsed, devicename);
             }
         }
 
         private void check_signal_quality_and_rssi(object sender, EventArgs e)
         {
-            try
+            foreach (WlanClient.WlanInterface wlanIface in _wlanclient.Interfaces)
             {
-                foreach (WlanClient.WlanInterface wlanIface in _wlanclient.Interfaces)
+                if (wlanIface.InterfaceState.ToString() == "Connected")
                 {
-                    if (wlanIface.InterfaceState.ToString() == "Connected")
+                    if (wlanIface.CurrentConnection.wlanAssociationAttributes.wlanSignalQuality != _signalquality)
                     {
-                        if (wlanIface.CurrentConnection.wlanAssociationAttributes.wlanSignalQuality != _signalquality)
+                        String time = _stopwatch.Elapsed.ToString("mm\\:ss\\.ff");
+
+                        _signalquality = wlanIface.CurrentConnection.wlanAssociationAttributes.wlanSignalQuality;
+
+                        _message = format_message(_stopwatch.Elapsed, "Quality of Signal", _signalquality.ToString(), "%");
+                        this._callback.on_signal_intensity_or_rssi_change(_message, this._results);
+                    }
+
+                    Wlan.WlanBssEntry[] wlanbssentries = wlanIface.GetNetworkBssList();
+
+                    foreach (Wlan.WlanBssEntry network in wlanbssentries)
+                    {
+                        if (wlanIface.CurrentConnection.wlanAssociationAttributes.dot11Ssid.SSID.ToString().Equals(network.dot11Ssid.SSID.ToString()))
                         {
-                            String time = _stopwatch.Elapsed.ToString("mm\\:ss\\.ff");
-
-                            _signalquality = wlanIface.CurrentConnection.wlanAssociationAttributes.wlanSignalQuality;
-
-                            _message = format_message(_stopwatch.Elapsed, "Quality of Signal", _signalquality.ToString(), "%");
-                            this._callback.on_signal_intensity_or_rssi_change(_message, this._results);
-                        }
-
-                        Wlan.WlanBssEntry[] wlanbssentries = wlanIface.GetNetworkBssList();
-
-                        foreach (Wlan.WlanBssEntry network in wlanbssentries)
-                        {
-                            if (wlanIface.CurrentConnection.wlanAssociationAttributes.dot11Ssid.SSID.ToString().Equals(network.dot11Ssid.SSID.ToString()))
+                            if (network.rssi != _rssi)
                             {
-                                if (network.rssi != _rssi)
-                                {
-                                    String time = _stopwatch.Elapsed.ToString("mm\\:ss\\.ff");
+                                String time = _stopwatch.Elapsed.ToString("mm\\:ss\\.ff");
 
-                                    _rssi = network.rssi;
+                                _rssi = network.rssi;
 
-                                    _message = format_message(_stopwatch.Elapsed, "RSSI", _rssi.ToString(), "dBm");
-                                    this._callback.on_signal_intensity_or_rssi_change(_message, this._results);
-                                    break;
-                                }
+                                _message = format_message(_stopwatch.Elapsed, "RSSI", _rssi.ToString(), "dBm");
+                                this._callback.on_signal_intensity_or_rssi_change(_message, this._results);
+                                break;
                             }
                         }
-                        break;
                     }
+                    break;
                 }
-            }
-            catch (Exception e2)
-            {
-
             }
         }
 
@@ -291,59 +279,45 @@ namespace Stability_Monitor_win32
             _timer_sq_rssi.Elapsed += new ElapsedEventHandler(check_signal_quality_and_rssi);
             _timer_sq_rssi.Interval = 100;
             _timer_sq_rssi.Start();
-        } 
+        }
 
         private void scan_transfer_speed(String devicename, String ipadd)
         {
-            try
+            CaptureDeviceList devices = CaptureDeviceList.Instance;
+
+            foreach (WinPcapDevice d in devices)
             {
-                CaptureDeviceList devices = CaptureDeviceList.Instance;
-
-                foreach (WinPcapDevice d in devices)
+                if (d.Interface.FriendlyName == devicename)
                 {
-                    if (d.Interface.FriendlyName == devicename)
-                    {
-                        device = d;
-                        break;
-                    }
-                }
-
-                if (device != null)
-                {
-                    device.OnPcapStatistics += new StatisticsModeEventHandler(update_statistics);
-                    device.Open(DeviceMode.Promiscuous, 1000);
-                    device.Filter = "(tcp or udp) and host " + ipadd;
-                    device.Mode = CaptureMode.Statistics;
-                    device.StartCapture();
+                    device = d;
+                    break;
                 }
             }
-            catch (Exception e)
+
+            if (device != null)
             {
-                
+                device.OnPcapStatistics += new StatisticsModeEventHandler(update_statistics);
+                device.Open(DeviceMode.Promiscuous, 1000);
+                device.Filter = "(tcp or udp) and host " + ipadd;
+                device.Mode = CaptureMode.Statistics;
+                device.StartCapture();
             }
         }
 
         private void update_statistics(object sender, StatisticsModeEventArgs e)
         {
-            try
-            {
-                StatisticsModePacket statistics = e.Statistics;
+            StatisticsModePacket statistics = e.Statistics;
 
-                long delay = (long)((statistics.Timeval.Seconds - _oldseconds) * 1000000
-                    + (statistics.Timeval.MicroSeconds - _oldmicroseconds));
+            long delay = (long)((statistics.Timeval.Seconds - _oldseconds) * 1000000
+                + (statistics.Timeval.MicroSeconds - _oldmicroseconds));
 
-                _transferspeed = (statistics.RecievedBytes * 1000000) / delay / 1024;
+            _transferspeed = (statistics.RecievedBytes * 1000000) / delay / 1024;
 
-                _message = format_message(_stopwatch.Elapsed, "Transferspeed", _transferspeed.ToString(), "kB/s");
-                this._callback.on_transfer_speed_change(_message, this._results);
+            _message = format_message(_stopwatch.Elapsed, "Transferspeed", _transferspeed.ToString(), "kB/s");
+            this._callback.on_transfer_speed_change(_message, this._results);
 
-                _oldseconds = statistics.Timeval.Seconds;
-                _oldmicroseconds = statistics.Timeval.MicroSeconds;
-            }
-            catch (Exception e2)
-            {
-                
-            }
+            _oldseconds = statistics.Timeval.Seconds;
+            _oldmicroseconds = statistics.Timeval.MicroSeconds;
         }
     }
 }

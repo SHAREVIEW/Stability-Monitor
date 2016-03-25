@@ -11,11 +11,17 @@ namespace Stability_Monitor_wphone81
 {
     class Results
     {
-        private String _logfilepath = "logfile.txt";
+        private String _logfilepath;
         private bool _created = false;
         private StorageFolder _folder = KnownFolders.PicturesLibrary;
         private StorageFile _file;
         private readonly SemaphoreSlim _lock = new SemaphoreSlim(1);
+
+        public Results(Testtype tt)
+        {
+            DateTime dt = DateTime.Now;
+            this._logfilepath = "Logfile_" + tt.ToString() + "_" + dt.TimeOfDay.ToString("hh\\-mm\\-ss\\,ff") + ".txt";
+        }
 
         public async void append_to_log(String message)
         {

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -29,6 +30,32 @@ namespace Stability_Monitor_wphone81
         public String format_message(TimeSpan time, String parameter, String value, String unit)
         {
             return this._agenttype.ToString() + "\t" + time.ToString("mm\\:ss\\.ff") + "\t" + parameter + "\t" + "=" + "\t" + value + "\t" + unit + "\r\n";
+        }
+
+        public void append_error_tolog(Exception e, TimeSpan ts, String devicename)
+        {
+            String _message;
+
+            if (e is NullReferenceException)
+            {
+                _message = format_message(ts, "File Transfer", "NOK", "Connection error.");
+                this._callback.on_file_received(_message, this._results);
+            }
+            else if (e is FileNotFoundException)
+            {
+                _message = format_message(ts, "File Transfer", "NOK", "Error '" + this._filepath + "' not found.");
+                this._callback.on_file_received(_message, this._results);
+            }
+            else if (e is ArgumentNullException && !devicename.Equals(""))
+            {
+                _message = format_message(ts, "File Transfer", "NOK", "Error '" + devicename + "' not found.");
+                this._callback.on_file_received(_message, this._results);
+            }
+            else
+            {
+                _message = format_message(ts, "File Transfer", "NOK", "Unknown error.");
+                this._callback.on_file_received(_message, this._results);
+            }
         }
     }
 }

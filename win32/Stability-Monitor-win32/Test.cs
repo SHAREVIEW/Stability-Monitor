@@ -13,12 +13,14 @@ namespace Stability_Monitor_win32
     class Test
     {
         private Testtype _testtype { get; set; }
-        private Results _results { get; set; } = new Results();
+        private Results _results { get; set; }
         private List<Agent> _test_agents { get; set; } = new List<Agent>();
         private List<Thread> _threads { get; set; } = new List<Thread>();
 
         public Test(Testtype ttype)
         {
+            _results = new Results(ttype);
+
             switch(ttype)
             {
                 case Testtype.Test_1:
@@ -27,7 +29,7 @@ namespace Stability_Monitor_win32
 
                         _threads.Add(new Thread(() =>
                         {
-                            _test_agents.ElementAt(0).receive_file("", "34B1CF4D-1069-4AD6-89B6-E161D79BE4D8", 5000);
+                            _test_agents.ElementAt(0).receive_file("LUMIA620", "34B1CF4D-1069-4AD6-89B6-E161D79BE4D8", 5000);
 
                         }));
 

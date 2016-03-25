@@ -75,35 +75,33 @@ namespace Stability_Monitor_wphone81
                 filestream.Dispose();
 
                 _httpclient.Dispose();
+
+                _message = format_message(_stopwatch.Elapsed, "File Transfer", "OK", this._filepath);
+                this._callback.on_file_received(_message, this._results);
             }
             catch (Exception e)
             {
-                
+                append_error_tolog(e, _stopwatch.Elapsed, "");
             }            
         }
 
         private void ProgressHandler(HttpProgress obj)
         {
-            try
+
+            _transferspeed += obj.BytesReceived;
+
+            if (_write)
             {
-                _transferspeed += obj.BytesReceived;
+                String time = _stopwatch.Elapsed.ToString("mm\\:ss\\.ff");
 
-                if (_write)
-                {
-                    String time = _stopwatch.Elapsed.ToString("mm\\:ss\\.ff");
+                _transferspeed /= 1024;
+                _message = format_message(_stopwatch.Elapsed, "Transferspeed", _transferspeed.ToString(), " kB/s");
+                this._callback.on_transfer_speed_change(_message, this._results);
 
-                    _transferspeed /= 1024;
-                    _message = format_message(_stopwatch.Elapsed, "Transferspeed", _transferspeed.ToString(), " kB/s");
-                    this._callback.on_transfer_speed_change(_message, this._results);
-
-                    _transferspeed = 0;
-                    _write = false;
-                }
+                _transferspeed = 0;
+                _write = false;
             }
-            catch (Exception e)
-            {
-                
-            }
+
         }
 
         public void scan_network_speed()
