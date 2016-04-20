@@ -6,19 +6,24 @@ using System.Threading.Tasks;
 
 namespace Stability_Monitor_wphone81
 {
-    class Almighty_controller
+    public class Almighty_controller
     {
-        private List<Test> _tests { get; set; }
-
-        public void shedule_test()
+        public void shedule_tests(List<Test> tests)
         {
-            Test test1 = new Test(Testtype.Test_1);
-            test1.start_test();
+            foreach (Test t in tests)
+            {
+                t.start_test();
+            }
         }
 
-        public void schedule_tests(List<Test> tests)
+        public void stop_tests(Main_view mv)
         {
+            foreach (Test t in mv.tests)
+            {
+                t.stop_test();
+            }
 
+            mv.tests.Clear();            
         }
     }
 }

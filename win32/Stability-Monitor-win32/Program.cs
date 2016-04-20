@@ -16,7 +16,7 @@ namespace Stability_Monitor_win32
         {
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-            Application.Run(new GUI_form());
+            Application.Run(new Main_view());
         }
     }
 }

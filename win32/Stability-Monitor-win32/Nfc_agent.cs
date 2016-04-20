@@ -8,7 +8,7 @@ namespace Stability_Monitor_win32
 {
     class Nfc_agent : Agent
     {
-        public Nfc_agent(String filepath, Agenttype agenttype, Callback_on_status_changed callback, Results results) : base(filepath, agenttype, callback, results)
+        public Nfc_agent(String filepath, Agenttype agenttype, Callback_on_status_changed callback, Results results, Main_view mv) : base(filepath, agenttype, callback, results, mv)
         {
 
         }

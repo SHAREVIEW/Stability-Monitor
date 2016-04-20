@@ -32,19 +32,21 @@ namespace Stability_Monitor_wphone81
 
         private bool _writing = false;
         private uint _transferspeed = 0;
-        private ThreadPoolTimer timer;
+        private ThreadPoolTimer _timer;
         private Stopwatch _stopwatch = new Stopwatch();
         private String _message;
-        private int counter_all_acks = 0;
-        private int old_counter_all_acks = 0;
-        private ThreadPoolTimer ack_timer;
-        private int counter_to_ack_error = 0;
+        private int _counter_all_acks = 0;
+        private int _old_counter_all_acks = 0;
+        private ThreadPoolTimer _ack_timer;
+        private int _counter_to_ack_error = 0;
 
-        public Bluetooth_agent(String filepath, Agenttype agenttype, Callback_on_status_changed callback, Results results) : base(filepath, agenttype, callback, results) { }
+        public Bluetooth_agent(String filepath, Agenttype agenttype, Callback_on_status_changed callback, Results results, Main_view main_view) : base(filepath, agenttype, callback, results, main_view) { }
 
         public override async void send_file(String devicename, String bluid, int not)
         {
             try {
+                _stopwatch.Start();
+
                 PeerFinder.AllowBluetooth = true;
                 PeerFinder.AlternateIdentities["Bluetooth:SDP"] = "{" + bluid + "}";
 
@@ -61,10 +63,17 @@ namespace Stability_Monitor_wphone81
 
                 _bluetooth_client = new StreamSocket();
 
-                await _bluetooth_client.ConnectAsync(_peer_info.HostName, "{" + bluid + "}");
+                if (_peer_info.ServiceName.Equals(""))
+                {
+                    await _bluetooth_client.ConnectAsync(_peer_info.HostName, "{" + bluid + "}");
+                }
+                else
+                {
+                    await _bluetooth_client.ConnectAsync(_peer_info.HostName, _peer_info.ServiceName);
+                }
 
                 StorageFolder folder = KnownFolders.PicturesLibrary;
-                StorageFile file = await folder.GetFileAsync(this._filepath);
+                StorageFile file = await folder.GetFileAsync(this.filepath);
 
                 IRandomAccessStreamWithContentType filestream = await file.OpenReadAsync();
 
@@ -96,16 +105,20 @@ namespace Stability_Monitor_wphone81
 
                     _datareader.ReadBytes(ack);
 
-                    counter_all_acks += BitConverter.ToInt32(ack, 0);
+                    _counter_all_acks += BitConverter.ToInt32(ack, 0);
 
-                    if ((uint)counter_all_acks == _length) break;
+                    if ((uint)_counter_all_acks == _length) break;
                 }
 
                 _datareader.Dispose();
                 _bluetooth_client.Dispose();
 
-                _message = format_message(_stopwatch.Elapsed, "File Transfer", "OK", this._filepath);
-                this._callback.on_file_received(_message, this._results);
+                _message = format_message(_stopwatch.Elapsed, "File Transfer", "OK", this.filepath);
+                this.callback.on_file_received(_message, this.results);
+                this.main_view.text_to_logs(_message.Replace("\t", " "));
+
+                _ack_timer.Cancel();
+                _stopwatch.Stop();
             }
             catch (Exception e)
             {
@@ -115,34 +128,37 @@ namespace Stability_Monitor_wphone81
 
         private void scan_received_acks()
         {
-            ack_timer = ThreadPoolTimer.CreatePeriodicTimer(check_received_acks, TimeSpan.FromSeconds(1));
+            _ack_timer = ThreadPoolTimer.CreatePeriodicTimer(check_received_acks, TimeSpan.FromSeconds(1));
         }
 
         private void check_received_acks(ThreadPoolTimer timer)
         {
-            if (old_counter_all_acks != counter_all_acks)
+            if (_old_counter_all_acks != _counter_all_acks)
             {
-                counter_to_ack_error = 0;
-                old_counter_all_acks = counter_all_acks;
+                _counter_to_ack_error = 0;
+                _old_counter_all_acks = _counter_all_acks;
             }
             else
             {
-                counter_to_ack_error++;
+                _counter_to_ack_error++;
             }
 
-            if (counter_to_ack_error > 20)
+            if (_counter_to_ack_error > 20)
             {
                 _bluetooth_client.Dispose();
                 timer.Cancel();
 
                 _message = format_message(_stopwatch.Elapsed, "File Transfer", "NOK", "Timeout error when receiving acks.");
-                this._callback.on_file_received(_message, this._results);
+                this.callback.on_file_received(_message, this.results);
+                this.main_view.text_to_logs(_message.Replace("\t", " "));
             }
         }
 
-        public override async void receive_file(String bluid, int not)
+        public override async void receive_file(String devicename, String bluid, int not)
         {
             try {
+                _stopwatch.Start();
+
                 _rfcomm_provider = await RfcommServiceProvider.CreateAsync(
                     RfcommServiceId.FromUuid(new Guid(bluid)));
 
@@ -165,15 +181,14 @@ namespace Stability_Monitor_wphone81
             try
             {
                 scan_transfer_speed();
-                _stopwatch.Start();
-
+                
                 _datareader = new DataReader(args.Socket.InputStream);
                 _datareader.InputStreamOptions = InputStreamOptions.Partial;
 
                 _datawriter_foracks = new DataWriter(args.Socket.OutputStream);
 
                 StorageFolder folder = KnownFolders.PicturesLibrary;
-                StorageFile file = await folder.CreateFileAsync(this._filepath, CreationCollisionOption.ReplaceExisting);
+                StorageFile file = await folder.CreateFileAsync(this.filepath, CreationCollisionOption.ReplaceExisting);
 
                 IRandomAccessStream filestream = await file.OpenAsync(FileAccessMode.ReadWrite);
                 IOutputStream filewriter = filestream.GetOutputStreamAt(0);
@@ -198,14 +213,21 @@ namespace Stability_Monitor_wphone81
                 filestream.Dispose();
                 _datareader.Dispose();
 
-                timer.Cancel();
-                _stopwatch.Stop();
+                _transferspeed /= 1024;
+                _message = format_message(_stopwatch.Elapsed, "Transferspeed", _transferspeed.ToString(), "kB/s");
+                this.callback.on_transfer_speed_change(_message, this.results);
+                this.main_view.text_to_logs(_message.Replace("\t", " "));
 
+                _timer.Cancel();
+                
                 sender.Dispose();
                 _bluetooth_listener.Dispose();
 
-                _message = format_message(_stopwatch.Elapsed, "File Transfer", "OK", this._filepath);
-                this._callback.on_file_received(_message, this._results);
+                _message = format_message(_stopwatch.Elapsed, "File Transfer", "OK", this.filepath);
+                this.callback.on_file_received(_message, this.results);
+                this.main_view.text_to_logs(_message.Replace("\t", " "));
+
+                _stopwatch.Stop();
             }
             catch (Exception e)
             {
@@ -215,7 +237,7 @@ namespace Stability_Monitor_wphone81
 
         private void scan_transfer_speed()
         {
-            timer = ThreadPoolTimer.CreatePeriodicTimer(update_network_speed, TimeSpan.FromSeconds(1));
+            _timer = ThreadPoolTimer.CreatePeriodicTimer(update_network_speed, TimeSpan.FromSeconds(1));
         }
 
         private async void update_network_speed(ThreadPoolTimer timer)
@@ -232,7 +254,8 @@ namespace Stability_Monitor_wphone81
 
                 _transferspeed /= 1024;
                 _message = format_message(_stopwatch.Elapsed, "Transferspeed", _transferspeed.ToString(), "kB/s");
-                this._callback.on_transfer_speed_change(_message, this._results);
+                this.callback.on_transfer_speed_change(_message, this.results);
+                this.main_view.text_to_logs(_message.Replace("\t", " "));
 
                 _transferspeed = 0;
 
@@ -242,6 +265,12 @@ namespace Stability_Monitor_wphone81
             {
                 append_error_tolog(e, _stopwatch.Elapsed, "");
             }
+        }
+
+        public void stop_scanning()
+        {
+            _ack_timer.Cancel();
+            _timer.Cancel();
         }
     }
 }

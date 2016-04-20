@@ -28,12 +28,14 @@ namespace Stability_Monitor_win32
         private String _message;
         private bool _writing = false;
 
-        public Bluetooth_agent(String filepath, Agenttype agenttype, Callback_on_status_changed callback, Results results) : base(filepath, agenttype, callback, results) { }
+        public Bluetooth_agent(String filepath, Agenttype agenttype, Callback_on_status_changed callback, Results results, Main_view mv) : base(filepath, agenttype, callback, results, mv) { }
 
         public override void send_file(String devicename, String bluid, int not)
         {
             try
             {
+                _stopwatch.Start();
+
                 _bluetooth_client = new BluetoothClient();
 
                 BluetoothDeviceInfo[] devinfos = _bluetooth_client.DiscoverDevices();
@@ -53,7 +55,7 @@ namespace Stability_Monitor_win32
 
                 _netstream = _bluetooth_client.GetStream();
 
-                byte[] dataToSend = File.ReadAllBytes(this._filepath);
+                byte[] dataToSend = File.ReadAllBytes(this.filepath);
 
                 _netstream.Write(dataToSend, 0, dataToSend.Length);
                 _netstream.Flush();
@@ -64,8 +66,11 @@ namespace Stability_Monitor_win32
                 _bluetooth_client.Dispose();
                 _bluetooth_client.Close();
 
-                _message = format_message(_stopwatch.Elapsed, "File Transfer", "OK", this._filepath);
-                this._callback.on_file_received(_message, this._results);
+                _message = format_message(_stopwatch.Elapsed, "File Transfer", "OK", this.filepath);
+                this.callback.on_file_received(_message, this.results);
+                this.main_view.text_to_logs(_message);
+
+                _stopwatch.Stop();
             }
             catch (Exception e)
             {
@@ -77,6 +82,9 @@ namespace Stability_Monitor_win32
         {
             try
             {
+                _stopwatch.Start();
+                scan_transfer_speed();                
+
                 _bluetooth_guid = Guid.Parse(bluid);
                 _bluetooth_listener = new BluetoothListener(_bluetooth_guid);
                 _bluetooth_listener.Start();
@@ -84,14 +92,11 @@ namespace Stability_Monitor_win32
                 _bluetooth_client = _bluetooth_listener.AcceptBluetoothClient();
                 _netstream = _bluetooth_client.GetStream();
 
-                _filestream = new FileStream(this._filepath, FileMode.Create, FileAccess.ReadWrite);
+                _filestream = new FileStream(this.filepath, FileMode.Create, FileAccess.ReadWrite);
 
                 int length;
                 _buffer = new byte[65000];
-
-                scan_transfer_speed();
-                _stopwatch.Start();
-
+                
                 while ((length = _netstream.Read(_buffer, 0, _buffer.Length)) != 0)
                 {
                     while (_writing) { }
@@ -104,6 +109,11 @@ namespace Stability_Monitor_win32
                 _timer_ts.Close();
                 _stopwatch.Stop();
 
+                int _transferspeed = _count_received_bytes / 1024;
+                _message = format_message(_stopwatch.Elapsed, "Transferspeed", _transferspeed.ToString(), "kB/s");
+                this.callback.on_transfer_speed_change(_message, this.results);
+                this.main_view.text_to_logs(_message);
+
                 _filestream.Dispose();
                 _filestream.Close();
 
@@ -115,8 +125,9 @@ namespace Stability_Monitor_win32
 
                 _bluetooth_listener.Stop();
 
-                _message = format_message(_stopwatch.Elapsed, "File Transfer", "OK", this._filepath);
-                this._callback.on_file_received(_message, this._results);
+                _message = format_message(_stopwatch.Elapsed, "File Transfer", "OK", this.filepath);
+                this.callback.on_file_received(_message, this.results);
+                this.main_view.text_to_logs(_message);
             }
             catch (Exception e)
             {
@@ -129,13 +140,17 @@ namespace Stability_Monitor_win32
             try
             {
                 _writing = true;
-                                
-                byte[] ack = BitConverter.GetBytes(_count_received_bytes);
-                _netstream.Write(ack, 0, ack.Length);                
+
+                if (_netstream != null)
+                {
+                    byte[] ack = BitConverter.GetBytes(_count_received_bytes);
+                    _netstream.Write(ack, 0, ack.Length);
+                }             
 
                 int _transferspeed = _count_received_bytes / 1024;
                 _message = format_message(_stopwatch.Elapsed, "Transferspeed", _transferspeed.ToString(), "kB/s");
-                this._callback.on_transfer_speed_change(_message, this._results);
+                this.callback.on_transfer_speed_change(_message, this.results);
+                this.main_view.text_to_logs(_message);
 
                 _count_received_bytes = 0;
 
@@ -152,6 +167,12 @@ namespace Stability_Monitor_win32
             _timer_ts.Interval = 1000;
             _timer_ts.Elapsed += new ElapsedEventHandler(check_transfer_speed);
             _timer_ts.Start();
+        }
+
+        public void stop_scanning()
+        {
+            if (_timer_ts.Enabled) _timer_ts.Stop();
+            _stopwatch.Stop();
         }
     }
 }

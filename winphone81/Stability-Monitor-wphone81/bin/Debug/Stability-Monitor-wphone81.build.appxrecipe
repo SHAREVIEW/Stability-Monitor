@@ -51,8 +51,17 @@
     <AppxPackagedFile Include="C:\Users\Tomas\Documents\GitHub\winphone81\Stability-Monitor-wphone81\bin\Debug\App.xbf">
       <PackagePath>App.xbf</PackagePath>
     </AppxPackagedFile>
-    <AppxPackagedFile Include="C:\Users\Tomas\Documents\GitHub\winphone81\Stability-Monitor-wphone81\bin\Debug\MainPage.xbf">
-      <PackagePath>MainPage.xbf</PackagePath>
+    <AppxPackagedFile Include="C:\Users\Tomas\Documents\GitHub\winphone81\Stability-Monitor-wphone81\bin\Debug\Main_view.xbf">
+      <PackagePath>Main_view.xbf</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\Tomas\Documents\GitHub\winphone81\Stability-Monitor-wphone81\bin\Debug\Setup_view_bluetooth.xbf">
+      <PackagePath>Setup_view_bluetooth.xbf</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\Tomas\Documents\GitHub\winphone81\Stability-Monitor-wphone81\bin\Debug\Setup_view_gsm.xbf">
+      <PackagePath>Setup_view_gsm.xbf</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\Tomas\Documents\GitHub\winphone81\Stability-Monitor-wphone81\bin\Debug\Setup_view_wifi.xbf">
+      <PackagePath>Setup_view_wifi.xbf</PackagePath>
     </AppxPackagedFile>
     <AppxPackagedFile Include="C:\Users\Tomas\Documents\GitHub\winphone81\Stability-Monitor-wphone81\bin\Debug\resources.pri">
       <PackagePath>resources.pri</PackagePath>

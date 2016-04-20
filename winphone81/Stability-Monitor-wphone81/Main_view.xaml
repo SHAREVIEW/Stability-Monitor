@@ -1,0 +1,38 @@
+﻿<Page
+    x:Class="Stability_Monitor_wphone81.Main_view"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:Stability_Monitor_wphone81"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+
+    <Grid>
+        <ScrollViewer>
+        <StackPanel Orientation="Vertical" Margin="0,-10,0,10">
+            <StackPanel x:Name="TitlePanel" Grid.Row="0" Margin="12,17,0,28">
+                <TextBlock x:Name="ApplicationTitle" Text="Windows Phone 8.1" Style="{StaticResource BaseTextBlockStyle}"/>
+                <TextBlock x:Name="PageTitle" Text="Stability-Monitor" Margin="0,-7,0,0" Style="{StaticResource BaseTextBlockStyle}" FontSize="27"/>
+                <TextBlock Text="Main view" VerticalAlignment="Center" HorizontalAlignment="Center" FontSize="30" Margin="0,15,0,0" />
+            </StackPanel>
+            <Button x:Name="Start_tests_bt" Content="START TESTS" HorizontalAlignment="Center" VerticalAlignment="Stretch" Width="240" Height="60" Click="Start_tests_bt_Click"/>
+            <Button x:Name="Stop_tests_bt" Content="STOP TESTS" HorizontalAlignment="Center" VerticalAlignment="Stretch" Width="241" Height="60" Click="Stop_tests_bt_Click"/>
+            <ComboBox x:Name="Add_new_test_cb" PlaceholderText="        ADD NEW TEST" HorizontalAlignment="Center" ScrollViewer.HorizontalScrollBarVisibility="Hidden" ScrollViewer.VerticalScrollBarVisibility="Hidden" HorizontalContentAlignment="Left" SelectionChanged="Add_new_test_cb_SelectionChanged" >
+                <ComboBoxItem Content="Test 1 - Wi-Fi/Send"/>
+                <ComboBoxItem Content="Test 2 - Wi-Fi/Receive"/>
+                <ComboBoxItem Content="Test 3 - Bluetooth/Send"/>
+                <ComboBoxItem Content="Test 4 - Bluetooth/Receive"/>
+                <ComboBoxItem Content="Test 5 - Gsm/Receive"/>
+            </ComboBox>
+            <TextBlock Name="List_of_tests_label" Text="LIST OF TESTS" FontSize="20" Height="30" HorizontalAlignment="Center" TextAlignment="Center" Margin="0,5,0,0"/>
+                <TextBox Name="List_of_tests_tb" x:FieldModifier="public" Text="" FontSize="20" IsReadOnly="True" MaxWidth="255" TextWrapping="Wrap" />
+            <Button x:Name="Clear_list_of_tests_bt" Content="CLEAR LIST OF TESTS" HorizontalAlignment="Center" VerticalAlignment="Stretch" MinWidth="240" MinHeight="60" Click="Clear_list_of_tests_bt_Click"/>
+            <TextBlock Name="Logs_label" Text="LOGS" FontSize="20" HorizontalAlignment="Center" TextAlignment="Center" Height="30"/>
+                <ScrollViewer>
+                    <TextBox x:FieldModifier="public" Name="Logs_tb" Text="" FontSize="15" IsReadOnly="True" TextWrapping="Wrap" MaxHeight="392" />
+                </ScrollViewer>
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</Page>

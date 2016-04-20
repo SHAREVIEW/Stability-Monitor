@@ -9,13 +9,13 @@ namespace Stability_Monitor_win32
 {
     class Results
     {
-        private String _logfilepath;
+        private String _logfilepath = @"C:\Stability-Monitor-win32\";
         private static object _locker = new Object();
         
         public Results(Testtype tt)
         {
             DateTime dt = DateTime.Now;
-            this._logfilepath = "Logfile_" + tt.ToString() + "_" + dt.TimeOfDay.ToString("hh\\-mm\\-ss\\,ff") + ".txt";
+            this._logfilepath += "Logfile_" + tt.ToString() + "_" + dt.TimeOfDay.ToString("hh\\-mm\\-ss\\,ff") + ".txt";
         }
 
         public void append_to_log(String message)

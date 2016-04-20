@@ -1,0 +1,32 @@
+﻿<Page
+    x:Class="Stability_Monitor_wphone81.Setup_view_gsm"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:Stability_Monitor_wphone81"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+
+    <Grid>
+        <StackPanel Orientation="Vertical" Margin="0,-10,0,10">
+            <StackPanel x:Name="TitlePanel" Grid.Row="0" Margin="12,17,0,28">
+                <TextBlock x:Name="ApplicationTitle" Text="Windows Phone 8.1" Style="{StaticResource BaseTextBlockStyle}"/>
+                <TextBlock x:Name="PageTitle" Text="Stability-Monitor" Margin="0,-7,0,0" Style="{StaticResource BaseTextBlockStyle}" FontSize="27"/>
+                <TextBlock Text="Setup view gsm" VerticalAlignment="Center" HorizontalAlignment="Center" FontSize="30" Margin="0,15,0,0" />
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" Height="60">
+                <TextBlock Text="FILENAME:" FontSize="20" Height="20"  Margin="15,0,0,0" />
+                <TextBox x:Name="Filename_tb" Text="Forgsm.pdf" FontSize="20" Height="35" Margin="15,0,0,0" Width="250" MaxWidth="250" MaxHeight="35" VerticalAlignment="Stretch" HorizontalContentAlignment="Stretch" />
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" Height="60" Margin="0,15,0,0">
+                <TextBlock Text="URL ADDRESS:" FontSize="20" Height="20"  Margin="15,0,0,0" />
+                <TextBox x:Name="Url_address_tb" Text="http://www.fiit.stuba.sk/docs//organizacia_studia/bakalari/uvod-do-studia_1516.pdf" FontSize="20" Height="35" Margin="15,0,0,0" Width="215" MaxWidth="215" MaxHeight="35" VerticalAlignment="Stretch" HorizontalContentAlignment="Stretch" />
+            </StackPanel>            
+            <StackPanel Orientation="Horizontal" Height="80" Margin="15,0,0,0">
+                <Button x:Name="Cancel_bt" Content="CANCEL" Height="65" Width="160" Margin="0,0,20,0" Click="Cancel_bt_Click" />
+                <Button x:Name="Add_test_bt" Content="ADD TEST" Margin="20,0,15,0" HorizontalAlignment="Left" VerticalAlignment="Center" Height="65" Width="160" Click="Add_test_bt_Click" />
+            </StackPanel>
+        </StackPanel>
+    </Grid>
+</Page>

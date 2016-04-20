@@ -1,0 +1,39 @@
+﻿<Page
+    x:Class="Stability_Monitor_wphone81.Setup_view_bluetooth"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:Stability_Monitor_wphone81"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+
+    <Grid>
+        <StackPanel Orientation="Vertical" Margin="0,-10,0,10">
+            <StackPanel x:Name="TitlePanel" Grid.Row="0" Margin="12,17,0,28">
+                <TextBlock x:Name="ApplicationTitle" Text="Windows Phone 8.1" Style="{StaticResource BaseTextBlockStyle}"/>
+                <TextBlock x:Name="PageTitle" Text="Stability-Monitor" Margin="0,-7,0,0" Style="{StaticResource BaseTextBlockStyle}" FontSize="27"/>
+                <TextBlock Text="Setup view bluetooth" VerticalAlignment="Center" HorizontalAlignment="Center" FontSize="30" Margin="0,15,0,0" />
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" Height="60">
+                <TextBlock Text="FILENAME:" FontSize="20" Height="20"  Margin="15,0,0,0" />
+                <TextBox x:Name="Filename_tb" FontSize="20" Height="35" Margin="15,0,0,0" Width="250" MaxWidth="250" MaxHeight="35" VerticalAlignment="Stretch" HorizontalContentAlignment="Stretch" />
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" Height="60" Margin="0,15,0,0">
+                <TextBlock Text="NAME OF DEVICE:" FontSize="20" Height="20"  Margin="15,0,0,0" />
+                <TextBox x:Name="Name_of_device_tb" FontSize="20" Height="35" Margin="15,0,0,0" Width="185" MaxWidth="185" MaxHeight="35" VerticalAlignment="Stretch" HorizontalContentAlignment="Stretch" />
+            </StackPanel>
+            <StackPanel>
+                <TextBlock Text="UUID:" FontSize="20" Height="30"  Margin="15,0,0,0" />
+                <ComboBox x:Name="Uuid_cb" Margin="0" PlaceholderText="" SelectedIndex="0" HorizontalAlignment="Center" ScrollViewer.HorizontalScrollBarVisibility="Hidden" ScrollViewer.VerticalScrollBarVisibility="Hidden" HorizontalContentAlignment="Left" SelectedValuePath="Content" >
+                    <ComboBoxItem Content="34B1CF4D-1069-4AD6-89B6-E161D79BE4D8"/>
+                    <ComboBoxItem Content="00001101-0000-1000-8000-00805F9B34FB"/>
+                </ComboBox>
+            </StackPanel>            
+            <StackPanel Orientation="Horizontal" Height="80" Margin="15,0,0,0">
+                <Button x:Name="Cancel_bt" Content="CANCEL" Height="65" Width="160" Margin="0,0,20,0" Click="Cancel_bt_Click" />
+                <Button x:Name="Add_test_bt" Content="ADD TEST" Margin="20,0,15,0" HorizontalAlignment="Left" VerticalAlignment="Center" Height="65" Width="160" Click="Add_test_bt_Click" />
+            </StackPanel>
+        </StackPanel>
+    </Grid>
+</Page>

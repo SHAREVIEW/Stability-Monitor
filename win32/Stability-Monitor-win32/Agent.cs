@@ -6,6 +6,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Forms;
 
 namespace Stability_Monitor_win32
 {
@@ -13,17 +14,19 @@ namespace Stability_Monitor_win32
 
     abstract class Agent
     {
-        public String _filepath { get; set; }
-        public Agenttype _agenttype { get; set; }
-        public Callback_on_status_changed _callback { get; set; }
-        public Results _results { get; set; }
+        public String filepath { get; set; }
+        public Agenttype agenttype { get; set; }
+        public Callback_on_status_changed callback { get; set; }
+        public Results results { get; set; }
+        public Main_view main_view;
 
-        protected Agent(String filepath, Agenttype agenttype, Callback_on_status_changed callback, Results results)
+        protected Agent(String filepath, Agenttype agenttype, Callback_on_status_changed callback, Results results, Main_view mv)
         {
-            this._filepath = filepath;
-            this._agenttype = agenttype;
-            this._callback = callback;
-            this._results = results;
+            this.filepath = filepath;
+            this.agenttype = agenttype;
+            this.callback = callback;
+            this.results = results;
+            this.main_view = mv;
         }
                 
         public abstract void send_file(String devicename, String address, int port);
@@ -31,7 +34,7 @@ namespace Stability_Monitor_win32
 
         public String format_message(TimeSpan time, String parameter, String value, String unit)
         {
-            return this._agenttype.ToString() + "\t" + time.ToString("mm\\:ss\\.ff") + "\t" + parameter + "\t" + "=" + "\t" + value + "\t" + unit +"\r\n";
+            return this.agenttype.ToString() + "\t" + time.ToString("mm\\:ss\\.ff") + "\t" + parameter + "\t" + "=" + "\t" + value + "\t" + unit +"\r\n";
         }
 
         public void append_error_tolog(Exception e, TimeSpan ts, String devicename)
@@ -41,27 +44,32 @@ namespace Stability_Monitor_win32
             if (e is SocketException)
             {
                 _message = format_message(ts, "File Transfer", "NOK", "Connection error.");
-                this._callback.on_file_received(_message, this._results);
+                this.callback.on_file_transfer_error(_message, this.results);
+                this.main_view.text_to_logs(_message);
             }
             else if (e is FileNotFoundException)
             {
-                _message = format_message(ts, "File Transfer", "NOK", "Error '" + this._filepath + "' not found.");
-                this._callback.on_file_received(_message, this._results);
+                _message = format_message(ts, "File Transfer", "NOK", "Error '" + this.filepath + "' not found.");
+                this.callback.on_file_transfer_error(_message, this.results);
+                this.main_view.text_to_logs(_message);
             }
             else if (e is ArgumentNullException && !devicename.Equals(""))
             {
                 _message = format_message(ts, "File Transfer", "NOK", "Error '" + devicename + "' not found.");
-                this._callback.on_file_received(_message, this._results);
+                this.callback.on_file_transfer_error(_message, this.results);
+                this.main_view.text_to_logs(_message);
             }
             else if (e is PlatformNotSupportedException)
             {
                 _message = format_message(ts, "File Transfer", "NOK", "Error adapter is not connected.");
-                this._callback.on_file_received(_message, this._results);
+                this.callback.on_file_transfer_error(_message, this.results);
+                this.main_view.text_to_logs(_message);
             }
             else
             {
                 _message = format_message(ts, "File Transfer", "NOK", "Unknown error.");
-                this._callback.on_file_received(_message, this._results);
+                this.callback.on_file_transfer_error(_message, this.results);
+                this.main_view.text_to_logs(_message);
             }
         }
     }

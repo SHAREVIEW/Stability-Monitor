@@ -8,7 +8,7 @@ namespace Stability_Monitor_win32
 {
     class Rfid_agent : Agent
     {
-        public Rfid_agent(String filepath, Agenttype agenttype, Callback_on_status_changed callback, Results results) : base(filepath, agenttype, callback, results)
+        public Rfid_agent(String filepath, Agenttype agenttype, Callback_on_status_changed callback, Results results, Main_view mv) : base(filepath, agenttype, callback, results, mv)
         {
 
         }

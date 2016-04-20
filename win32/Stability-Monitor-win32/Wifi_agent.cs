@@ -37,37 +37,47 @@ namespace Stability_Monitor_win32
         private ulong _oldseconds = 0;
         private ulong _oldmicroseconds = 0;
         private String _message;
-        WinPcapDevice device = null;
+        private WinPcapDevice _device = null;
 
-        public Wifi_agent(String filepath, Agenttype agenttype, Callback_on_status_changed callback, Results results) : base(filepath, agenttype, callback, results) { }
+        public Wifi_agent(String filepath, Agenttype agenttype, Callback_on_status_changed callback, Results results, Main_view mv) : base(filepath, agenttype, callback, results, mv) { }
 
         public override void send_file(String devicename, String ipadd, int port)
         {
-            scan_transfer_speed(devicename, ipadd);
-            //scan_signal_quality_and_rssi();
             _stopwatch.Start();
+            scan_transfer_speed(devicename, ipadd);
+            scan_signal_quality_and_rssi();
 
-            send_file_tcp(ipadd, port);
-
-            System.Threading.Thread.Sleep(1010);
-
+            if (port < 10000)
+            {
+                send_file_tcp(ipadd, port);
+            }
+            else
+            {
+                send_file_udp(ipadd, port);
+            }    
+                   
             _timer_sq_rssi.Stop();
-            if (device.Started) device.Close();
+            if (_device.Started) _device.Close();
             _stopwatch.Stop();
         }
 
         public override void receive_file(String devicename, String ipadd, int port)
         {
+            _stopwatch.Start();
             scan_transfer_speed(devicename, ipadd);
             scan_signal_quality_and_rssi();
-            _stopwatch.Start();
 
-            receive_file_tcp(devicename, ipadd, port);
-
-            System.Threading.Thread.Sleep(1010);
+            if (port < 10000)
+            {
+                receive_file_tcp(devicename, ipadd, port);
+            }
+            else
+            {
+                receive_file_udp(devicename, ipadd, port);
+            }
 
             _timer_sq_rssi.Stop();
-            if (device.Started) device.Close();
+            if (_device.Started) _device.Close();
             _stopwatch.Stop();
         }
 
@@ -78,18 +88,25 @@ namespace Stability_Monitor_win32
                 _tcpclient.Connect(IPAddress.Parse(ipadd), port);
                 _netstream = _tcpclient.GetStream();
 
-                _tosend = File.ReadAllBytes(this._filepath);
+                _filestream = File.OpenRead(this.filepath);
 
-                _netstream.Write(_tosend, 0, _tosend.Length);
-                _netstream.Flush();
+                _tosend = new byte[63 * 1024];
+
+                while ((_length = _filestream.Read(_tosend, 0, 63 * 1024)) != 0)
+                {
+                    _netstream.Write(_tosend, 0, _length);
+                }
 
                 _netstream.Dispose();
                 _netstream.Close();
 
                 _tcpclient.Close();
 
-                _message = format_message(_stopwatch.Elapsed, "File Transfer", "OK", this._filepath);
-                this._callback.on_file_received(_message, this._results);
+                System.Threading.Thread.Sleep(1000);
+
+                _message = format_message(_stopwatch.Elapsed, "File Transfer", "OK", this.filepath);
+                this.callback.on_file_received(_message, this.results);
+                this.main_view.text_to_logs(_message);                
             }
             catch (Exception e)
             {
@@ -101,13 +118,13 @@ namespace Stability_Monitor_win32
         {
             try
             {
-                _buffer = new byte[1500];
+                _buffer = new byte[63 * 1024];
 
                 _tcplistener = new TcpListener(IPAddress.Any, port);
                 _tcplistener.Start();
                 _tcpclient = _tcplistener.AcceptTcpClient();
                 _netstream = _tcpclient.GetStream();
-                _filestream = new FileStream(this._filepath, FileMode.Create, FileAccess.ReadWrite);
+                _filestream = new FileStream(this.filepath, FileMode.Create, FileAccess.ReadWrite);
 
                 while ((_length = _netstream.Read(_buffer, 0, _buffer.Length)) != 0)
                 {
@@ -123,8 +140,11 @@ namespace Stability_Monitor_win32
                 _tcpclient.Close();
                 _tcplistener.Stop();
 
-                _message = format_message(_stopwatch.Elapsed, "File Transfer", "OK", this._filepath);
-                this._callback.on_file_received(_message, this._results);
+                System.Threading.Thread.Sleep(1000);
+
+                _message = format_message(_stopwatch.Elapsed, "File Transfer", "OK", this.filepath);
+                this.callback.on_file_received(_message, this.results);
+                this.main_view.text_to_logs(_message);
             }
             catch (Exception e)
             {
@@ -139,7 +159,7 @@ namespace Stability_Monitor_win32
                 IPEndPoint ipep = new IPEndPoint(IPAddress.Parse(ipadd), port);
                 byte[] hash_bytes;
 
-                _tosend = File.ReadAllBytes(this._filepath);
+                _tosend = File.ReadAllBytes(this.filepath);
 
                 hash_bytes = new MD5CryptoServiceProvider().ComputeHash(_tosend);
                 _udpclient.Send(hash_bytes, hash_bytes.Length, ipep);
@@ -167,8 +187,9 @@ namespace Stability_Monitor_win32
 
                 _udpclient.Close();
 
-                _message = format_message(_stopwatch.Elapsed, "File Transfer", "OK", this._filepath);
-                this._callback.on_file_received(_message, this._results);
+                _message = format_message(_stopwatch.Elapsed, "File Transfer", "OK", this.filepath);
+                this.callback.on_file_received(_message, this.results);
+                this.main_view.text_to_logs(_message);
             }
             catch (Exception e)
             {
@@ -180,28 +201,26 @@ namespace Stability_Monitor_win32
         {
             try
             {
-                UdpClient udpclient = new UdpClient(port);
+                _udpclient = new UdpClient(port);
                 IPEndPoint ipep = new IPEndPoint(IPAddress.Any, port);
-                byte[] hash_bytes = new byte[64];
-                int hash_need = 64;
+                byte[] hash_bytes = new byte[16];
+                int hash_need = 16;
 
-                _filestream = new FileStream(this._filepath, FileMode.Create, FileAccess.ReadWrite);
+                _filestream = new FileStream(this.filepath, FileMode.Create, FileAccess.ReadWrite);
 
                 while (true)
                 {
                     _length = (_buffer = _udpclient.Receive(ref ipep)).Length;
 
-                    if (_length >= hash_need)
+                    if (_length == hash_need)
                     {
-                        Array.Copy(_buffer, 0, hash_bytes, 64 - hash_need, hash_need);
-
-                        _length -= hash_need;
-                        _filestream.Write(_buffer, hash_need, _length);
+                        Array.Copy(_buffer, 0, hash_bytes, 16 - hash_need, hash_need);
+                                                
                         break;
                     }
                     else if (_length < hash_need)
                     {
-                        Array.Copy(_buffer, 0, hash_bytes, 64 - hash_need, _length);
+                        Array.Copy(_buffer, 0, hash_bytes, 16 - hash_need, _length);
                         hash_need -= _length;
                     }
                 }
@@ -214,19 +233,22 @@ namespace Stability_Monitor_win32
                 _filestream.Dispose();
                 _filestream.Close();
 
-                byte[] hash_receivedbytes = File.ReadAllBytes(this._filepath);
+                byte[] receivedbytes = File.ReadAllBytes(this.filepath);
+                byte[] hash_receivedbytes = new MD5CryptoServiceProvider().ComputeHash(receivedbytes);
 
-                udpclient.Close();
+                _udpclient.Close();
 
-                if (!(hash_bytes.Equals(hash_receivedbytes)))
+                if (!(hash_bytes.SequenceEqual(hash_receivedbytes)))
                 {
                     _message = format_message(_stopwatch.Elapsed, "File Transfer", "NOK", "Different hash");
-                    this._callback.on_file_received(_message, this._results);
+                    this.callback.on_file_received(_message, this.results);
+                    this.main_view.text_to_logs(_message);
                 }
                 else
                 {
-                    _message = format_message(_stopwatch.Elapsed, "File Transfer", "OK", this._filepath);
-                    this._callback.on_file_received(_message, this._results);
+                    _message = format_message(_stopwatch.Elapsed, "File Transfer", "OK", this.filepath);
+                    this.callback.on_file_received(_message, this.results);
+                    this.main_view.text_to_logs(_message);
                 }    
             }
             catch (Exception e)
@@ -239,24 +261,25 @@ namespace Stability_Monitor_win32
         {
             foreach (WlanClient.WlanInterface wlanIface in _wlanclient.Interfaces)
             {
-                if (wlanIface.InterfaceState.ToString() == "Connected")
-                {
-                    if (wlanIface.CurrentConnection.wlanAssociationAttributes.wlanSignalQuality != _signalquality)
-                    {
-                        String time = _stopwatch.Elapsed.ToString("mm\\:ss\\.ff");
-
-                        _signalquality = wlanIface.CurrentConnection.wlanAssociationAttributes.wlanSignalQuality;
-
-                        _message = format_message(_stopwatch.Elapsed, "Quality of Signal", _signalquality.ToString(), "%");
-                        this._callback.on_signal_intensity_or_rssi_change(_message, this._results);
-                    }
-
+                if (wlanIface.InterfaceState.ToString().Equals("Connected"))
+                {                    
                     Wlan.WlanBssEntry[] wlanbssentries = wlanIface.GetNetworkBssList();
 
                     foreach (Wlan.WlanBssEntry network in wlanbssentries)
                     {
-                        if (wlanIface.CurrentConnection.wlanAssociationAttributes.dot11Ssid.SSID.ToString().Equals(network.dot11Ssid.SSID.ToString()))
+                        if (wlanIface.CurrentConnection.wlanAssociationAttributes.dot11Ssid.SSID.SequenceEqual(network.dot11Ssid.SSID))
                         {
+                            if (network.linkQuality != _signalquality)
+                            {
+                                String time = _stopwatch.Elapsed.ToString("mm\\:ss\\.ff");
+
+                                _signalquality = network.linkQuality;
+
+                                _message = format_message(_stopwatch.Elapsed, "Quality of Signal", _signalquality.ToString(), "%");
+                                this.callback.on_signal_intensity_or_rssi_change(_message, this.results);
+                                this.main_view.text_to_logs(_message);
+                            }
+
                             if (network.rssi != _rssi)
                             {
                                 String time = _stopwatch.Elapsed.ToString("mm\\:ss\\.ff");
@@ -264,7 +287,8 @@ namespace Stability_Monitor_win32
                                 _rssi = network.rssi;
 
                                 _message = format_message(_stopwatch.Elapsed, "RSSI", _rssi.ToString(), "dBm");
-                                this._callback.on_signal_intensity_or_rssi_change(_message, this._results);
+                                this.callback.on_signal_intensity_or_rssi_change(_message, this.results);
+                                this.main_view.text_to_logs(_message);
                                 break;
                             }
                         }
@@ -277,7 +301,7 @@ namespace Stability_Monitor_win32
         private void scan_signal_quality_and_rssi()
         {   
             _timer_sq_rssi.Elapsed += new ElapsedEventHandler(check_signal_quality_and_rssi);
-            _timer_sq_rssi.Interval = 100;
+            _timer_sq_rssi.Interval = 1000;
             _timer_sq_rssi.Start();
         }
 
@@ -289,18 +313,18 @@ namespace Stability_Monitor_win32
             {
                 if (d.Interface.FriendlyName == devicename)
                 {
-                    device = d;
+                    _device = d;
                     break;
                 }
             }
 
-            if (device != null)
+            if (_device != null)
             {
-                device.OnPcapStatistics += new StatisticsModeEventHandler(update_statistics);
-                device.Open(DeviceMode.Promiscuous, 1000);
-                device.Filter = "(tcp or udp) and host " + ipadd;
-                device.Mode = CaptureMode.Statistics;
-                device.StartCapture();
+                _device.OnPcapStatistics += new StatisticsModeEventHandler(update_statistics);
+                _device.Open(DeviceMode.Promiscuous, 1000);
+                _device.Filter = "(tcp or udp) and host " + ipadd;
+                _device.Mode = CaptureMode.Statistics;
+                _device.StartCapture();
             }
         }
 
@@ -314,10 +338,18 @@ namespace Stability_Monitor_win32
             _transferspeed = (statistics.RecievedBytes * 1000000) / delay / 1024;
 
             _message = format_message(_stopwatch.Elapsed, "Transferspeed", _transferspeed.ToString(), "kB/s");
-            this._callback.on_transfer_speed_change(_message, this._results);
+            this.callback.on_transfer_speed_change(_message, this.results);
+            this.main_view.text_to_logs(_message);
 
             _oldseconds = statistics.Timeval.Seconds;
             _oldmicroseconds = statistics.Timeval.MicroSeconds;
+        }
+
+        public void stop_scanning()
+        {
+            _timer_sq_rssi.Stop();
+            if (_device.Started) _device.Close();
+            _stopwatch.Stop();
         }
     }
 }

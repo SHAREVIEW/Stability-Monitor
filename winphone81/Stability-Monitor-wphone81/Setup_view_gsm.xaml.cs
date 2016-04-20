@@ -13,20 +13,21 @@ using Windows.UI.Xaml.Input;
 using Windows.UI.Xaml.Media;
 using Windows.UI.Xaml.Navigation;
 
-// The Blank Page item template is documented at http://go.microsoft.com/fwlink/?LinkId=391641
+// The Blank Page item template is documented at http://go.microsoft.com/fwlink/?LinkID=390556
 
 namespace Stability_Monitor_wphone81
 {
     /// <summary>
     /// An empty page that can be used on its own or navigated to within a Frame.
     /// </summary>
-    public sealed partial class MainPage : Page
+    public sealed partial class Setup_view_gsm : Page
     {
-        public MainPage()
+        private int nmbr;
+        private Main_view mv;
+
+        public Setup_view_gsm()
         {
             this.InitializeComponent();
-
-            this.NavigationCacheMode = NavigationCacheMode.Required;
         }
 
         /// <summary>
@@ -36,20 +37,21 @@ namespace Stability_Monitor_wphone81
         /// This parameter is typically used to configure the page.</param>
         protected override void OnNavigatedTo(NavigationEventArgs e)
         {
-            // TODO: Prepare page for display here.
-
-            // TODO: If your application contains multiple pages, ensure that you are
-            // handling the hardware Back button by registering for the
-            // Windows.Phone.UI.Input.HardwareButtons.BackPressed event.
-            // If you are using the NavigationHelper provided by some templates,
-            // this event is handled for you.
+            this.mv = (Main_view)e.Parameter;
+            this.nmbr = mv.selected_index;
         }
 
-        private Almighty_controller _almighty_controler = new Almighty_controller();
-
-        private void Test1_btn_Click(object sender, RoutedEventArgs e)
+        private void Cancel_bt_Click(object sender, RoutedEventArgs e)
         {
-            _almighty_controler.shedule_test();
+            Frame.GoBack();
+        }
+
+        private void Add_test_bt_Click(object sender, RoutedEventArgs e)
+        {
+            if (Filename_tb.Text.Equals("") || Url_address_tb.Text.Equals("")) return;
+
+            mv.add_new_test(nmbr, Filename_tb.Text, "", Url_address_tb.Text, 0);
+            Frame.GoBack();
         }
     }
 }
