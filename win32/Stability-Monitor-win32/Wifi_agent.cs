@@ -164,24 +164,18 @@ namespace Stability_Monitor_win32
                 hash_bytes = new MD5CryptoServiceProvider().ComputeHash(_tosend);
                 _udpclient.Send(hash_bytes, hash_bytes.Length, ipep);
 
-                System.Threading.Thread.Sleep(1000);
+                System.Threading.Thread.Sleep(2000);                               
 
-                int index = 0;
+                _filestream = File.OpenRead(this.filepath);
 
-                _buffer = new byte[65507];
+                _buffer = new byte[63 * 1024];
 
-                while ((index + 65507) < _tosend.Length)
+                while ((_length = _filestream.Read(_buffer, 0, 63 * 1024)) != 0)
                 {
-                    Array.Copy(_tosend, index, _buffer, 0, 65507);
-                    _udpclient.Send(_buffer, 65507, ipep);
-                    index += 65507;
-                }
+                    _udpclient.Send(_buffer, _length, ipep);
+                }                                
 
-                if (index != _tosend.Length)
-                {
-                    Array.Copy(_tosend, index, _buffer, 0, (_tosend.Length - index));
-                    _udpclient.Send(_buffer, (_tosend.Length - index), ipep);
-                }
+                System.Threading.Thread.Sleep(2000);
 
                 _udpclient.Send(_buffer, 0, ipep);
 
