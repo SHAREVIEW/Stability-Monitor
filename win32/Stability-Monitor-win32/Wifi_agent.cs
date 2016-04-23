@@ -301,7 +301,7 @@ namespace Stability_Monitor_win32
 
         private void scan_transfer_speed(String devicename, String ipadd)
         {
-            CaptureDeviceList devices = CaptureDeviceList.Instance;
+            CaptureDeviceList devices = CaptureDeviceList.New();
 
             foreach (WinPcapDevice d in devices)
             {
