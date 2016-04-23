@@ -103,7 +103,7 @@ namespace Stability_Monitor_win32
                     Wifi_agent wa = (Wifi_agent)_test_agents.ElementAt(0);
                     wa.stop_scanning();
                 }
-                else if (_test_agents.ElementAt(0).agenttype == Agenttype.Wifi_agent)
+                else if (_test_agents.ElementAt(0).agenttype == Agenttype.Bluetooth_agent)
                 {
                     Bluetooth_agent wa = (Bluetooth_agent)_test_agents.ElementAt(0);
                     wa.stop_scanning();
