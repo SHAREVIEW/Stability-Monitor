@@ -10,7 +10,7 @@ using System.Windows.Forms;
 
 namespace Stability_Monitor_win32
 {
-    public enum Agenttype { Wifi_agent, Bluetooth_agent, Gsm_agent, Rfid_agent, Nfc_agent };
+    public enum Agenttype { Wifi_agent, Bluetooth_agent, Gsm_agent };
 
     abstract class Agent
     {

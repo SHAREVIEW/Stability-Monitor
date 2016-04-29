@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Stability_Monitor_wphone81
 {
-    public enum Agenttype { Wifi_agent, Bluetooth_agent, Gsm_agent, Rfid_agent, Nfc_agent };
+    public enum Agenttype { Wifi_agent, Bluetooth_agent, Gsm_agent };
 
     abstract class Agent
     {
